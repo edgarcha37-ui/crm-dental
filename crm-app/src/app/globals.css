@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors - Dental CRM palette */
+  --color-bg-primary: #F7F8FC;
+  --color-bg-white: #FFFFFF;
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-active: #4A90D9;
+  --color-sidebar-hover: #EBF2FC;
+  --color-accent-blue: #4A90D9;
+  --color-accent-green: #34C759;
+  --color-accent-yellow: #F5A623;
+  --color-accent-red: #E74C3C;
+  --color-accent-purple: #9B59B6;
+  --color-text-primary: #1A202C;
+  --color-text-secondary: #718096;
+  --color-text-muted: #A0AEC0;
+  --color-border: #E2E8F0;
+  --color-border-light: #EDF2F7;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-badge: 20px;
+  --radius-input: 10px;
+
+  /* Font */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}

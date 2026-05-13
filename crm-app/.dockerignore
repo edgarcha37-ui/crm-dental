@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+.env.local
+.env.example
+README.md
+RESUMEN_HERRAMIENTAS_Y_SKILLS.md
+.DS_Store
+npm-debug.log*
+.vscode
+.idea
+coverage
+out
+build
+*.tsbuildinfo

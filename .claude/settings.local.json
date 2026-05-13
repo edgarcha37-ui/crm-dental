@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/Users/edgar/Documents/Prueba google antigravity/Prueba definitiva de CRM dental/workflows\")",
+      "Bash(psql --version)",
+      "Read(//opt/homebrew/opt/libpq/bin/**)",
+      "Read(//usr/local/opt/libpq/bin/**)",
+      "Read(//Applications/Postgres.app/Contents/**)",
+      "Bash(docker --version)",
+      "Bash(mkdir -p /tmp/crm-sql-runner)",
+      "Read(//tmp/**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node run.js \"/Users/edgar/Documents/Prueba google antigravity/Prueba definitiva de CRM dental/crm-app/supabase/migrations/001_init.sql\")",
+      "Bash(node probe.js)",
+      "Bash(node -e ' *)",
+      "Bash(curl *)",
+      "Bash(rm -rf .next)",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git -c user.email=edgarcha37@gmail.com -c 'user.name=Edgar Chavez' add -A)"
+    ],
+    "additionalDirectories": [
+      "/Users/edgar/Documents/Prueba google antigravity/Prueba definitiva de CRM dental"
+    ]
+  }
+}
