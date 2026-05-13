@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
     LayoutDashboard,
     Users,
@@ -10,6 +11,7 @@ import {
     StickyNote,
     Receipt,
     Settings,
+    LogOut,
 } from 'lucide-react';
 
 const navItems = [
@@ -23,6 +25,19 @@ const navItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    async function handleLogout() {
+        if (loggingOut) return;
+        setLoggingOut(true);
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } finally {
+            router.replace('/login');
+            router.refresh();
+        }
+    }
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-[260px] bg-white border-r border-[var(--color-border-light)] flex flex-col z-30">
@@ -76,9 +91,9 @@ export default function Sidebar() {
                 </Link>
             </div>
 
-            {/* Doctor Profile */}
+            {/* Doctor Profile + Logout */}
             <div className="px-4 pb-6 border-t border-[var(--color-border-light)] pt-4">
-                <div className="flex items-center gap-3 px-2">
+                <div className="flex items-center gap-3 px-2 mb-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
                         AT
                     </div>
@@ -87,6 +102,15 @@ export default function Sidebar() {
                         <p className="text-xs text-[var(--color-text-muted)]">Cirujano Principal</p>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--color-text-secondary)] border border-[var(--color-border-light)] hover:bg-red-50 hover:text-red-600 hover:border-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+                >
+                    <LogOut size={16} />
+                    {loggingOut ? 'Cerrando…' : 'Cerrar sesión'}
+                </button>
             </div>
         </aside>
     );
