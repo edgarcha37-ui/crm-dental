@@ -1,0 +1,96 @@
+{
+  "name": "Paciente en Riesgo (diario)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }] }
+      },
+      "id": "c1d2e3f4-0001-0001-0001-000000000001",
+      "name": "Diario 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://crmbeta.orbitai.pro/api/patients/at-risk",
+        "options": { "timeout": 15000 }
+      },
+      "id": "c1d2e3f4-0002-0002-0002-000000000002",
+      "name": "Llama CRM at-risk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "len-check",
+              "leftValue": "={{ $json.length || 0 }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c1d2e3f4-0003-0003-0003-000000000003",
+      "name": "¿Hay pacientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const pacientes = $input.first().json;\nconst lista = pacientes.map((p, i) => `${i+1}. ${p.nombre} — $${(p.ticket||0).toLocaleString('es-MX')} — ${p.diasSinVisita}d sin visita`).join('\\n');\nconst titulo = `${pacientes.length} pacientes de ticket alto sin visita en 6m`;\nconst contenido = `Se detectaron pacientes con tratamientos activos > $5,000 MXN sin citas en los últimos 6 meses:\\n\\n${lista}`;\nconst accion = 'Contactar por WhatsApp con oferta de revaloración gratuita. Priorizar los de mayor ticket.';\nreturn { json: { categoria: 'Retención', titulo, contenido, accion_sugerida: accion } };"
+      },
+      "id": "c1d2e3f4-0004-0004-0004-000000000004",
+      "name": "Construye insight",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [820, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://db.orbitai.pro/rest/v1/business_insights",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3Nzg2NDIxNDgsImV4cCI6MTg5MzQ1NjAwMCwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlzcyI6InN1cGFiYXNlIn0.bprwqE9lT80GCp_6EbUlfUh8kAwjgU2ejoz1pt9KVaA" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3Nzg2NDIxNDgsImV4cCI6MTg5MzQ1NjAwMCwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlzcyI6InN1cGFiYXNlIn0.bprwqE9lT80GCp_6EbUlfUh8kAwjgU2ejoz1pt9KVaA" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "c1d2e3f4-0005-0005-0005-000000000005",
+      "name": "Inserta business_insight",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1040, 220]
+    }
+  ],
+  "connections": {
+    "Diario 09:00": { "main": [[{ "node": "Llama CRM at-risk", "type": "main", "index": 0 }]] },
+    "Llama CRM at-risk": { "main": [[{ "node": "¿Hay pacientes?", "type": "main", "index": 0 }]] },
+    "¿Hay pacientes?": {
+      "main": [
+        [{ "node": "Construye insight", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Construye insight": { "main": [[{ "node": "Inserta business_insight", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
