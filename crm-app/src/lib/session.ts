@@ -57,7 +57,8 @@ export async function signSession(user: string, ttlSeconds = SESSION_TTL_SECONDS
 
 /**
  * Verifica firma + expiración. Devuelve el payload o null.
- * Usa verify() de Web Crypto (constant-time).
+ * Re-firma el payload y compara con timing-safe equal — evita los problemas
+ * de tipos de ArrayBuffer entre Node y Edge runtime al pasar a crypto.subtle.verify.
  */
 export async function verifySession(token: string | undefined | null): Promise<SessionPayload | null> {
     if (!token) return null;
@@ -66,14 +67,9 @@ export async function verifySession(token: string | undefined | null): Promise<S
     const [payloadB64, sigB64] = parts;
     try {
         const key = await importKey(getSecret());
-        const sigBytes = b64urlDecode(sigB64);
-        const ok = await crypto.subtle.verify(
-            'HMAC',
-            key,
-            sigBytes.buffer.slice(sigBytes.byteOffset, sigBytes.byteOffset + sigBytes.byteLength) as ArrayBuffer,
-            enc.encode(payloadB64)
-        );
-        if (!ok) return null;
+        const expectedSig = await crypto.subtle.sign('HMAC', key, enc.encode(payloadB64));
+        const expectedB64 = b64urlEncode(expectedSig);
+        if (!timingSafeEqual(sigB64, expectedB64)) return null;
         const payload = JSON.parse(dec.decode(b64urlDecode(payloadB64))) as SessionPayload;
         if (!payload?.u || !payload?.exp) return null;
         if (Math.floor(Date.now() / 1000) >= payload.exp) return null;
