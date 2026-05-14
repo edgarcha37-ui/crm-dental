@@ -25,22 +25,46 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // Debug diagnostics — solo presencia, no valores
+    const dbgSecret = process.env.SESSION_SECRET ? `${process.env.SESSION_SECRET.length}` : 'missing';
+    const dbgInternal = process.env.INTERNAL_API_KEY ? `${process.env.INTERNAL_API_KEY.length}` : 'missing';
+
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     const session = await verifySession(token);
-    if (session) return NextResponse.next();
+
+    if (session) {
+        const res = NextResponse.next();
+        res.headers.set('x-mw-secret-len', dbgSecret);
+        res.headers.set('x-mw-internal-len', dbgInternal);
+        return res;
+    }
 
     // Sin sesión válida
     if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        const res = NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        res.headers.set('x-mw-secret-len', dbgSecret);
+        res.headers.set('x-mw-internal-len', dbgInternal);
+        res.headers.set('x-mw-had-cookie', token ? 'yes' : 'no');
+        return res;
     }
 
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
     loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+    const res = NextResponse.redirect(loginUrl);
+    res.headers.set('x-mw-secret-len', dbgSecret);
+    res.headers.set('x-mw-internal-len', dbgInternal);
+    res.headers.set('x-mw-had-cookie', token ? 'yes' : 'no');
+    return res;
 }
 
+/**
+ * Forzamos runtime Node.js (no Edge) para que process.env.SESSION_SECRET y
+ * INTERNAL_API_KEY se lean de la misma forma que en las API routes, evitando
+ * desincronización de env entre runtimes dentro del mismo contenedor.
+ */
 export const config = {
+    runtime: 'nodejs',
     /**
      * Aplica a todo, excepto:
      *  - /login, /api/auth/*  (siempre públicos)
