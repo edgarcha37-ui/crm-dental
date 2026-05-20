@@ -60,51 +60,74 @@ export async function upsertMetric(data: Omit<Metric, 'id' | 'created_at'>) {
     return { id: result.id };
 }
 
-export async function getLiveMetrics() {
+import { toDateOnly, todayDateOnly, startOfThisMonth, endOfThisMonth, startOfLastMonth, endOfLastMonth } from '../dates';
+
+interface LiveMetricsResult {
+    ingresos_totales: number;
+    ingresos_totales_anterior: number;
+    pacientes_nuevos: number;
+    pacientes_nuevos_anterior: number;
+    tasa_seguimiento: number;
+}
+
+// Cache en memoria. 5 minutos es suficiente: el dashboard se mira con frecuencia
+// pero los datos no necesitan ser absolutamente fresh second-by-second.
+let cached: { at: number; data: LiveMetricsResult } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+export function invalidateLiveMetricsCache(): void {
+    cached = null;
+}
+
+async function computeLiveMetrics(): Promise<LiveMetricsResult> {
     const db = getSupabaseAdmin();
     const now = new Date();
-    
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-    
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
 
-    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    // DATE bounds — para invoices.fecha y appointments.fecha (columnas DATE)
+    const startOfThisMonthDate = toDateOnly(startOfThisMonth(now));
+    const endOfThisMonthDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const startOfLastMonthDate = toDateOnly(startOfLastMonth(now));
+    const endOfLastMonthDate = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
+    const todayDate = todayDateOnly();
+    const last30DaysDate = toDateOnly(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
 
-    // 1. Ingresos Totales (Mes actual vs Mes Anterior)
+    // TIMESTAMPTZ bounds — para patients.fecha_registro
+    const startOfThisMonthTs = startOfThisMonth(now).toISOString();
+    const endOfThisMonthTs = endOfThisMonth(now).toISOString();
+    const startOfLastMonthTs = startOfLastMonth(now).toISOString();
+    const endOfLastMonthTs = endOfLastMonth(now).toISOString();
+
+    // 1. Ingresos Totales (Mes actual vs Mes Anterior) — invoices.fecha es DATE
     const [{ data: incThis }, { data: incLast }] = await Promise.all([
-        db.from('invoices').select('monto').eq('estatus', 'Pagada').gte('fecha', startOfThisMonth).lte('fecha', endOfThisMonth),
-        db.from('invoices').select('monto').eq('estatus', 'Pagada').gte('fecha', startOfLastMonth).lte('fecha', endOfLastMonth)
+        db.from('invoices').select('monto').eq('estatus', 'Pagada').gte('fecha', startOfThisMonthDate).lte('fecha', endOfThisMonthDate),
+        db.from('invoices').select('monto').eq('estatus', 'Pagada').gte('fecha', startOfLastMonthDate).lte('fecha', endOfLastMonthDate)
     ]);
-    const ingresos_totales = (incThis || []).reduce((acc: number, i: any) => acc + (i.monto || 0), 0);
-    const ingresos_totales_anterior = (incLast || []).reduce((acc: number, i: any) => acc + (i.monto || 0), 0);
+    const ingresos_totales = (incThis || []).reduce((acc: number, i: { monto: number | null }) => acc + (i.monto || 0), 0);
+    const ingresos_totales_anterior = (incLast || []).reduce((acc: number, i: { monto: number | null }) => acc + (i.monto || 0), 0);
 
-    // 2. Pacientes Nuevos (Mes actual vs Mes Anterior)
+    // 2. Pacientes Nuevos (Mes actual vs Mes Anterior) — patients.fecha_registro es TIMESTAMPTZ
     const [{ count: patThis }, { count: patLast }] = await Promise.all([
-        db.from('patients').select('id', { count: 'exact', head: true }).gte('fecha_registro', startOfThisMonth).lte('fecha_registro', endOfThisMonth),
-        db.from('patients').select('id', { count: 'exact', head: true }).gte('fecha_registro', startOfLastMonth).lte('fecha_registro', endOfLastMonth)
+        db.from('patients').select('id', { count: 'exact', head: true }).gte('fecha_registro', startOfThisMonthTs).lte('fecha_registro', endOfThisMonthTs),
+        db.from('patients').select('id', { count: 'exact', head: true }).gte('fecha_registro', startOfLastMonthTs).lte('fecha_registro', endOfLastMonthTs)
     ]);
     const pacientes_nuevos = patThis ?? 0;
     const pacientes_nuevos_anterior = patLast ?? 0;
 
-    // 3. Tasa de Seguimiento Activo (Continuidad Clínica)
-    // Pacientes con cita en los últimos 30 días
+    // 3. Tasa de Seguimiento Activo (Continuidad Clínica) — appointments.fecha es DATE
     const { data: recentAppointments } = await db.from('appointments')
         .select('paciente_id')
-        .gte('fecha', last30Days)
-        .lte('fecha', now.toISOString());
-    
+        .gte('fecha', last30DaysDate)
+        .lte('fecha', todayDate);
+
     let tasa_seguimiento = 0;
     if (recentAppointments && recentAppointments.length > 0) {
         const recentPatientIds = [...new Set(recentAppointments.map((a: { paciente_id: number }) => a.paciente_id))];
-        
-        // De estos pacientes, ¿cuántos tienen citas futuras programadas?
+
         const { data: futureAppointments } = await db.from('appointments')
             .select('paciente_id')
             .in('paciente_id', recentPatientIds)
-            .gt('fecha', now.toISOString());
-            
+            .gt('fecha', todayDate);
+
         const futurePatientIds = new Set((futureAppointments || []).map((a: { paciente_id: number }) => a.paciente_id));
         tasa_seguimiento = Math.round((futurePatientIds.size / recentPatientIds.length) * 100);
     }
@@ -116,4 +139,13 @@ export async function getLiveMetrics() {
         pacientes_nuevos_anterior,
         tasa_seguimiento
     };
+}
+
+export async function getLiveMetrics(): Promise<LiveMetricsResult> {
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+        return cached.data;
+    }
+    const data = await computeLiveMetrics();
+    cached = { at: Date.now(), data };
+    return data;
 }

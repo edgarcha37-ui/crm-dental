@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
                     contenido: `Detectamos que muchos pacientes están terminando sus citas sin agendar la siguiente. Tasa actual: ${liveMetrics.tasa_seguimiento}%.`,
                     accion_sugerida: 'Sugerimos revisar el proceso de salida en recepción. Implementar un guion de reagendamiento antes de procesar el pago.',
                     visto: false,
-                    fecha: new Date().toISOString()
-                } as any);
+                    fecha: new Date().toISOString(),
+                });
             }
         } catch (e) {
             console.error('Error auto-generando insight', e);

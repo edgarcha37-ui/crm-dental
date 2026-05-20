@@ -1,75 +1,135 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Building2, User, Bell, Palette, Shield, Webhook,
-    Save, Check, ChevronRight,
+    Save, Check, ChevronRight, AlertCircle, Stethoscope,
 } from 'lucide-react';
+import DoctorsManager from '@/components/DoctorsManager';
 
-type Section = 'clinica' | 'perfil' | 'notificaciones' | 'apariencia' | 'seguridad' | 'integraciones';
+type Section = 'clinica' | 'perfil' | 'doctores' | 'notificaciones' | 'apariencia' | 'seguridad' | 'integraciones';
 
 const SECTIONS: { key: Section; label: string; icon: React.ReactNode; description: string }[] = [
     { key: 'clinica', label: 'Datos de la Clínica', icon: <Building2 size={18} />, description: 'Nombre, dirección, horarios' },
     { key: 'perfil', label: 'Perfil del Dentista', icon: <User size={18} />, description: 'Información personal y cédula' },
+    { key: 'doctores', label: 'Doctores', icon: <Stethoscope size={18} />, description: 'Equipo clínico de la consulta' },
     { key: 'notificaciones', label: 'Notificaciones', icon: <Bell size={18} />, description: 'Recordatorios y alertas' },
     { key: 'apariencia', label: 'Apariencia', icon: <Palette size={18} />, description: 'Tema y preferencias visuales' },
     { key: 'seguridad', label: 'Seguridad', icon: <Shield size={18} />, description: 'Contraseña y accesos' },
     { key: 'integraciones', label: 'Integraciones n8n', icon: <Webhook size={18} />, description: 'Webhooks y automatizaciones' },
 ];
 
-function SaveButton({ onSave }: { onSave: () => void }) {
-    const [saved, setSaved] = useState(false);
-    function handleSave() {
-        onSave();
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-    }
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+function SaveButton({ onSave, state }: { onSave: () => void; state: SaveState }) {
+    const isSaved = state === 'saved';
+    const isSaving = state === 'saving';
+    const isError = state === 'error';
     return (
         <button
-            onClick={handleSave}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md ${saved
-                    ? 'bg-green-500 text-white'
-                    : 'bg-[var(--color-accent-blue)] text-white hover:bg-blue-600'
-                }`}
+            onClick={onSave}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-60 ${
+                isSaved ? 'bg-green-500 text-white' :
+                isError ? 'bg-red-500 text-white' :
+                'bg-[var(--color-accent-blue)] text-white hover:bg-blue-600'
+            }`}
         >
-            {saved ? <Check size={16} /> : <Save size={16} />}
-            {saved ? 'Guardado' : 'Guardar Cambios'}
+            {isSaved ? <Check size={16} /> : isError ? <AlertCircle size={16} /> : <Save size={16} />}
+            {isSaving ? 'Guardando...' : isSaved ? 'Guardado' : isError ? 'Error al guardar' : 'Guardar Cambios'}
         </button>
     );
 }
 
+interface ClinicaForm {
+    nombre: string;
+    direccion: string;
+    telefono: string;
+    correo: string;
+    horario_apertura: string;
+    horario_cierre: string;
+    dias_atencion: string[];
+}
+
+interface PerfilForm {
+    nombre: string;
+    especialidad: string;
+    cedula: string;
+    universidad: string;
+    correo: string;
+    telefono: string;
+}
+
+interface NotificacionesForm {
+    recordatorio_cita: boolean;
+    confirmacion_cita: boolean;
+    cancelacion_cita: boolean;
+    pago_pendiente: boolean;
+    nuevo_paciente: boolean;
+    reporte_diario: boolean;
+    horas_anticipacion: string;
+}
+
+const EMPTY_CLINICA: ClinicaForm = {
+    nombre: '', direccion: '', telefono: '', correo: '',
+    horario_apertura: '09:00', horario_cierre: '18:00',
+    dias_atencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+};
+const EMPTY_PERFIL: PerfilForm = { nombre: '', especialidad: '', cedula: '', universidad: '', correo: '', telefono: '' };
+const EMPTY_NOTIF: NotificacionesForm = {
+    recordatorio_cita: true, confirmacion_cita: true, cancelacion_cita: true,
+    pago_pendiente: true, nuevo_paciente: false, reporte_diario: true,
+    horas_anticipacion: '24',
+};
+
 export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState<Section>('clinica');
+    const [loading, setLoading] = useState(true);
+    const [clinica, setClinica] = useState<ClinicaForm>(EMPTY_CLINICA);
+    const [perfil, setPerfil] = useState<PerfilForm>(EMPTY_PERFIL);
+    const [notificaciones, setNotificaciones] = useState<NotificacionesForm>(EMPTY_NOTIF);
 
-    // Estado de los formularios
-    const [clinica, setClinica] = useState({
-        nombre: 'Consultorio Dental Thorne',
-        direccion: 'Av. Insurgentes Sur 1234, Col. Del Valle, CDMX',
-        telefono: '+52 55 1234 5678',
-        correo: 'contacto@dentaltorne.mx',
-        horario_apertura: '09:00',
-        horario_cierre: '18:00',
-        dias_atencion: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
-    });
+    // Estado de guardado por sección, así "Guardado" solo se ve en la sección que se guardó.
+    const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
+    const setSaveState = (section: string, s: SaveState) =>
+        setSaveStates(prev => ({ ...prev, [section]: s }));
 
-    const [perfil, setPerfil] = useState({
-        nombre: 'Dr. Aris Thorne',
-        especialidad: 'Cirujano Dental',
-        cedula: '12345678',
-        universidad: 'UNAM',
-        correo: 'aris.thorne@dentaltorne.mx',
-        telefono: '+52 55 9876 5432',
-    });
+    // Carga inicial desde el backend.
+    useEffect(() => {
+        async function load() {
+            try {
+                const res = await fetch('/api/settings');
+                if (!res.ok) throw new Error('failed');
+                const data = await res.json();
+                setClinica({ ...EMPTY_CLINICA, ...data.clinica });
+                setPerfil({ ...EMPTY_PERFIL, ...data.perfil });
+                setNotificaciones({ ...EMPTY_NOTIF, ...data.notificaciones });
+            } catch (e) {
+                console.error('Error al cargar settings:', e);
+            } finally {
+                setLoading(false);
+            }
+        }
+        load();
+    }, []);
 
-    const [notificaciones, setNotificaciones] = useState({
-        recordatorio_cita: true,
-        confirmacion_cita: true,
-        cancelacion_cita: true,
-        pago_pendiente: true,
-        nuevo_paciente: false,
-        reporte_diario: true,
-        horas_anticipacion: '24',
-    });
+    async function saveSection(section: 'clinica' | 'perfil' | 'notificaciones', data: unknown) {
+        setSaveState(section, 'saving');
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section, data }),
+            });
+            if (!res.ok) throw new Error('save failed');
+            setSaveState(section, 'saved');
+            setTimeout(() => setSaveState(section, 'idle'), 2000);
+        } catch (e) {
+            console.error('Error al guardar', section, e);
+            setSaveState(section, 'error');
+            setTimeout(() => setSaveState(section, 'idle'), 3000);
+        }
+    }
 
     const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -137,6 +197,12 @@ export default function SettingsPage() {
 
                 {/* Contenido */}
                 <div className="flex-1">
+                    {loading && (
+                        <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-12 text-center text-sm text-[var(--color-text-muted)]">
+                            Cargando configuración...
+                        </div>
+                    )}
+                    {!loading && (<>
 
                     {/* CLÍNICA */}
                     {activeSection === 'clinica' && (
@@ -146,7 +212,7 @@ export default function SettingsPage() {
                                     <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Datos de la Clínica</h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Información que aparece en facturas y comunicaciones</p>
                                 </div>
-                                <SaveButton onSave={() => { }} />
+                                <SaveButton onSave={() => saveSection('clinica', clinica)} state={saveStates.clinica ?? 'idle'} />
                             </div>
                             <div className="space-y-5">
                                 <div className="grid grid-cols-2 gap-5">
@@ -212,7 +278,7 @@ export default function SettingsPage() {
                                     <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Perfil del Dentista</h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Información profesional y de contacto</p>
                                 </div>
-                                <SaveButton onSave={() => { }} />
+                                <SaveButton onSave={() => saveSection('perfil', perfil)} state={saveStates.perfil ?? 'idle'} />
                             </div>
                             <div className="flex items-center gap-6 mb-8 p-5 bg-gray-50 rounded-2xl">
                                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-2xl font-bold text-white flex-shrink-0">AT</div>
@@ -263,6 +329,9 @@ export default function SettingsPage() {
                         </div>
                     )}
 
+                    {/* DOCTORES */}
+                    {activeSection === 'doctores' && <DoctorsManager />}
+
                     {/* NOTIFICACIONES */}
                     {activeSection === 'notificaciones' && (
                         <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-8">
@@ -271,7 +340,7 @@ export default function SettingsPage() {
                                     <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Notificaciones</h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Configura cuándo y cómo recibir alertas</p>
                                 </div>
-                                <SaveButton onSave={() => { }} />
+                                <SaveButton onSave={() => saveSection('notificaciones', notificaciones)} state={saveStates.notificaciones ?? 'idle'} />
                             </div>
                             <div className="space-y-4">
                                 {[
@@ -314,58 +383,28 @@ export default function SettingsPage() {
                         </div>
                     )}
 
-                    {/* APARIENCIA */}
+                    {/* APARIENCIA — pendiente de implementar */}
                     {activeSection === 'apariencia' && (
                         <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-8">
                             <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">Apariencia</h2>
                             <p className="text-sm text-[var(--color-text-muted)] mb-8">Personaliza los colores y el tema del CRM</p>
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-3">Tema</label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {[
-                                            { id: 'claro', label: 'Claro', preview: 'bg-white border-2 border-[var(--color-accent-blue)]' },
-                                            { id: 'oscuro', label: 'Oscuro (próximamente)', preview: 'bg-slate-800 opacity-50 cursor-not-allowed' },
-                                        ].map(theme => (
-                                            <div key={theme.id} className={`${theme.preview} rounded-2xl p-6 flex items-center justify-center`}>
-                                                <span className={`text-sm font-medium ${theme.id === 'oscuro' ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>{theme.label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-3">Color de Acento</label>
-                                    <div className="flex items-center gap-3">
-                                        {['#4A90D9', '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'].map(color => (
-                                            <button key={color} className="w-10 h-10 rounded-full border-2 border-white shadow-md hover:scale-110 transition-all" style={{ backgroundColor: color }} />
-                                        ))}
-                                    </div>
-                                </div>
+                            <div className="p-6 bg-gray-50 rounded-2xl border border-[var(--color-border-light)] text-center">
+                                <Palette size={32} className="mx-auto text-gray-400 mb-3" />
+                                <p className="text-sm font-medium text-[var(--color-text-primary)]">Próximamente</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-1">Tema oscuro y color de acento personalizado en una próxima versión.</p>
                             </div>
                         </div>
                     )}
 
-                    {/* SEGURIDAD */}
+                    {/* SEGURIDAD — pendiente de implementar */}
                     {activeSection === 'seguridad' && (
                         <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-8">
                             <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">Seguridad</h2>
                             <p className="text-sm text-[var(--color-text-muted)] mb-8">Contraseña y acceso al sistema</p>
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Contraseña Actual</label>
-                                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 focus:border-[var(--color-accent-blue)]" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Nueva Contraseña</label>
-                                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 focus:border-[var(--color-accent-blue)]" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Confirmar Nueva Contraseña</label>
-                                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 focus:border-[var(--color-accent-blue)]" />
-                                </div>
-                                <button className="px-6 py-2.5 bg-[var(--color-accent-blue)] text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-all shadow-md">
-                                    Actualizar Contraseña
-                                </button>
+                            <div className="p-6 bg-gray-50 rounded-2xl border border-[var(--color-border-light)] text-center">
+                                <Shield size={32} className="mx-auto text-gray-400 mb-3" />
+                                <p className="text-sm font-medium text-[var(--color-text-primary)]">Próximamente</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-1">Cambio de contraseña desde el CRM en una próxima versión. Por ahora se gestiona vía variables de entorno.</p>
                             </div>
                         </div>
                     )}
@@ -410,6 +449,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
                     )}
+                    </>)}
                 </div>
             </div>
         </div>

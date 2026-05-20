@@ -3,7 +3,32 @@ import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession, timingSafeEqual } fro
 
 export const runtime = 'nodejs';
 
+/**
+ * Validación de Origin contra Host. Equivale a un CSRF token "implícito":
+ * un sitio externo no puede enviar un POST con Origin = nuestro host.
+ *
+ * Se permite que Origin esté ausente (algunas tools legítimas no lo mandan),
+ * pero si viene, debe coincidir con Host. Bloqueamos cross-site explícito.
+ */
+function isAllowedOrigin(request: NextRequest): boolean {
+    const origin = request.headers.get('origin');
+    if (!origin) return true; // POST same-origin desde el form de Next no siempre manda Origin
+
+    try {
+        const originHost = new URL(origin).host;
+        const targetHost = request.headers.get('host') || request.nextUrl.host;
+        return originHost === targetHost;
+    } catch {
+        return false;
+    }
+}
+
 export async function POST(request: NextRequest) {
+    // CSRF: bloqueamos cross-origin antes de procesar credenciales.
+    if (!isAllowedOrigin(request)) {
+        return NextResponse.json({ ok: false, error: 'Origen no permitido' }, { status: 403 });
+    }
+
     let body: { username?: string; password?: string };
     try {
         body = await request.json();
@@ -41,7 +66,9 @@ export async function POST(request: NextRequest) {
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        // 'strict' bloquea que la cookie viaje en navegaciones cross-site,
+        // protección adicional contra ataques CSRF que aprovechen sesiones activas.
+        sameSite: 'strict',
         path: '/',
         maxAge: SESSION_TTL_SECONDS,
     });

@@ -1,21 +1,29 @@
 import { getSupabaseAdmin } from '../supabase';
 
+export type NotePrioridad = 'Alta' | 'Media' | 'Baja';
+
 export interface Note {
   id: number;
   contenido: string;
-  titulo: string;
+  titulo: string | null;
   tipo: 'nota' | 'recordatorio' | 'tarea';
-  prioridad: 'critical' | 'high' | 'medium' | 'low';
+  prioridad: NotePrioridad;
   paciente_id: number | null;
   completada: boolean;
   fecha_vencimiento: string | null;
-  categoria: string;
+  categoria: string | null;
   fecha_creacion: string;
   updated_at: string;
   paciente_nombre?: string;
 }
 
-const PRIORIDAD_ORDER: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
+// Mantenemos un mapa con los valores antiguos (critical/high/medium/low) para que
+// los registros pre-migración sigan ordenándose razonablemente hasta que el seed
+// los normalice a Alta/Media/Baja.
+const PRIORIDAD_ORDER: Record<string, number> = {
+  Alta: 1, Media: 2, Baja: 3,
+  critical: 1, high: 1, medium: 2, low: 3,
+};
 
 export async function getNotes() {
   const db = getSupabaseAdmin();
@@ -53,7 +61,7 @@ export async function getNotesByPatient(pacienteId: number) {
   });
 }
 
-export async function createNote(data: Omit<Note, 'id' | 'fecha_creacion' | 'updated_at' | 'paciente_nombre'>) {
+export async function createNote(data: Partial<Omit<Note, 'id' | 'fecha_creacion' | 'updated_at' | 'paciente_nombre'>> & { contenido: string; tipo: 'nota' | 'recordatorio' | 'tarea'; prioridad: NotePrioridad }) {
   const db = getSupabaseAdmin();
   const { data: result, error } = await db.from('notes').insert({
     contenido: data.contenido,

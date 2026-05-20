@@ -3,17 +3,16 @@ import { getSupabaseAdmin } from '../supabase';
 export interface Appointment {
   id: number;
   paciente_id: number;
-  doctor_id?: number;
+  doctor_id?: number | null;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
   motivo: string;
-  motivo_consulta?: string;
-  notas_clinicas?: string;
+  motivo_consulta?: string | null;
+  notas_clinicas?: string | null;
   estado: string;
-  duracion?: number;
-  fuente?: string;
-  google_event_id: string | null;
+  duracion?: number | null;
+  fuente?: string | null;
   created_at: string;
   paciente_nombre?: string;
 }
@@ -69,7 +68,8 @@ export async function createAppointment(data: Omit<Appointment, 'id' | 'created_
     hora_fin: data.hora_fin,
     motivo: data.motivo,
     estado: data.estado,
-    google_event_id: data.google_event_id || null,
+    duracion: data.duracion ?? null,
+    doctor_id: data.doctor_id ?? null,
   }).select().single();
   if (error) throw error;
   return { id: result.id };

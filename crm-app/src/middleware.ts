@@ -42,12 +42,19 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     /**
-     * Aplica a todo, excepto:
-     *  - /login, /api/auth/*  (siempre públicos)
-     *  - /_next/*, /favicon.ico, /robots.txt
-     *  - archivos con extensión (.png, .ico, .svg, .css, .js, ...)
+     * Lista plana de rutas protegidas. La lógica de excepciones (/login,
+     * /api/auth/*, x-internal-key) vive dentro de la función middleware.
+     * Evitamos negative-lookaheads porque en Next 16 el matcher los aplica
+     * de forma inconsistente y bloqueaba POST /api/auth/login en runtime.
      */
     matcher: [
-        '/((?!login|api/auth|_next/static|_next/image|favicon\\.ico|robots\\.txt|.*\\.[\\w]+$).*)',
+        '/',
+        '/patients/:path*',
+        '/appointments/:path*',
+        '/billing/:path*',
+        '/metrics/:path*',
+        '/notes/:path*',
+        '/settings/:path*',
+        '/api/:path*',
     ],
 };

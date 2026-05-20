@@ -1,0 +1,12 @@
+{
+  "version": 4,
+  "environmentTargets": [
+    {
+      "id": "goatdecants",
+      "name": "GoatDecants",
+      "kind": "external-instance",
+      "url": "https://n8n.orbitai.pro"
+    }
+  ],
+  "environments": []
+}

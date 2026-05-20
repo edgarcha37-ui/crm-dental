@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     LayoutDashboard,
     Users,
@@ -23,10 +23,50 @@ const navItems = [
     { href: '/billing', label: 'Facturación', icon: Receipt },
 ];
 
+interface SidebarSettings {
+    clinicaNombre: string;
+    clinicaTagline: string;
+    doctorNombre: string;
+    doctorEspecialidad: string;
+}
+
+function initials(name: string): string {
+    return name
+        .replace(/^Dr\.?\s+/i, '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(s => s[0]?.toUpperCase() ?? '')
+        .join('') || '—';
+}
+
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [loggingOut, setLoggingOut] = useState(false);
+    const [settings, setSettings] = useState<SidebarSettings>({
+        clinicaNombre: 'DentalCRM',
+        clinicaTagline: 'Gestión Clínica Moderna',
+        doctorNombre: '',
+        doctorEspecialidad: '',
+    });
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/settings')
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                if (!data || cancelled) return;
+                setSettings({
+                    clinicaNombre: data.clinica?.nombre || 'DentalCRM',
+                    clinicaTagline: 'Gestión Clínica Moderna',
+                    doctorNombre: data.perfil?.nombre || '',
+                    doctorEspecialidad: data.perfil?.especialidad || '',
+                });
+            })
+            .catch(() => { /* silencioso: caemos a defaults */ });
+        return () => { cancelled = true; };
+    }, []);
 
     async function handleLogout() {
         if (loggingOut) return;
@@ -49,8 +89,8 @@ export default function Sidebar() {
                     </svg>
                 </div>
                 <div>
-                    <h1 className="text-lg font-bold text-[var(--color-text-primary)]">DentalCRM</h1>
-                    <p className="text-xs text-[var(--color-text-muted)]">Gestión Clínica Moderna</p>
+                    <h1 className="text-lg font-bold text-[var(--color-text-primary)]">{settings.clinicaNombre}</h1>
+                    <p className="text-xs text-[var(--color-text-muted)]">{settings.clinicaTagline}</p>
                 </div>
             </div>
 
@@ -95,11 +135,15 @@ export default function Sidebar() {
             <div className="px-4 pb-6 border-t border-[var(--color-border-light)] pt-4">
                 <div className="flex items-center gap-3 px-2 mb-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                        AT
+                        {initials(settings.doctorNombre || settings.clinicaNombre)}
                     </div>
-                    <div>
-                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Dr. Aris Thorne</p>
-                        <p className="text-xs text-[var(--color-text-muted)]">Cirujano Principal</p>
+                    <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+                            {settings.doctorNombre || 'Sin doctor configurado'}
+                        </p>
+                        <p className="text-xs text-[var(--color-text-muted)] truncate">
+                            {settings.doctorEspecialidad || (settings.doctorNombre ? '' : 'Ve a Configuración → Perfil')}
+                        </p>
                     </div>
                 </div>
                 <button

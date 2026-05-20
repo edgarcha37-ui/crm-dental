@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAppointments, getAppointmentsByPatient, createAppointment, getTodayAppointmentCount } from '@/lib/data/appointments';
+import { createAppointmentSchema, zodErrorResponse } from '@/schemas';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -7,13 +8,27 @@ export async function GET(request: NextRequest) {
     const countOnly = searchParams.get('count');
     const pacienteId = searchParams.get('paciente_id');
 
-    if (countOnly === 'today') return NextResponse.json({ count: await getTodayAppointmentCount() });
-    if (pacienteId) return NextResponse.json(await getAppointmentsByPatient(Number(pacienteId)));
-    return NextResponse.json(await getAppointments(fecha || undefined));
+    try {
+        if (countOnly === 'today') return NextResponse.json({ count: await getTodayAppointmentCount() });
+        if (pacienteId) return NextResponse.json(await getAppointmentsByPatient(Number(pacienteId)));
+        return NextResponse.json(await getAppointments(fecha || undefined));
+    } catch (err) {
+        console.error('GET /api/appointments:', err);
+        return NextResponse.json({ error: 'Error al obtener citas' }, { status: 500 });
+    }
 }
 
 export async function POST(request: NextRequest) {
-    const body = await request.json();
-    const result = await createAppointment(body);
-    return NextResponse.json(result, { status: 201 });
+    try {
+        const body = await request.json();
+        const parsed = createAppointmentSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
+        }
+        const result = await createAppointment(parsed.data);
+        return NextResponse.json(result, { status: 201 });
+    } catch (err) {
+        console.error('POST /api/appointments:', err);
+        return NextResponse.json({ error: 'Error al crear cita' }, { status: 500 });
+    }
 }

@@ -3,18 +3,18 @@ import { getSupabaseAdmin } from '../supabase';
 export interface Patient {
   id: number;
   nombre: string;
-  telefono: string;
-  correo: string;
-  direccion: string;
-  sexo: string;
-  fecha_nacimiento: string;
-  fuente_captacion: string;
-  notas_generales: string;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  sexo: string | null;
+  fecha_nacimiento: string | null;
+  fuente_captacion: string | null;
+  notas_generales: string | null;
   archivado: boolean;
   fecha_registro: string;
   created_at: string;
   updated_at: string;
-  // Calculados en JS
+  // Calculados en JS / vista
   ultimo_tratamiento?: string;
   estatus_tratamiento?: string;
   saldo_pendiente?: number;
@@ -23,6 +23,26 @@ export interface Patient {
 export async function getPatients(filter?: 'activos' | 'archivados') {
   const db = getSupabaseAdmin();
 
+  // Usamos la vista patients_with_summary que ya trae último tratamiento,
+  // estatus y saldo pendiente agregados desde SQL. Elimina el N+1 anterior
+  // (trae todos los tratamientos y los unía en JS).
+  let query = db.from('patients_with_summary').select('*');
+  if (filter === 'archivados') query = query.eq('archivado', true);
+  else if (filter === 'activos') query = query.eq('archivado', false);
+
+  const { data, error } = await query.order('fecha_registro', { ascending: false });
+  if (error) {
+    // Fallback: si la vista no existe todavía (migración pendiente), usa el patrón
+    // viejo para no romper. Loggeamos pero seguimos.
+    console.warn('patients_with_summary no disponible, fallback a join JS:', error.message);
+    return getPatientsLegacy(filter);
+  }
+  return data as Patient[];
+}
+
+/** Implementación previa al deploy de la vista. Sobrevive como fallback. */
+async function getPatientsLegacy(filter?: 'activos' | 'archivados') {
+  const db = getSupabaseAdmin();
   let query = db.from('patients').select('*');
   if (filter === 'archivados') query = query.eq('archivado', true);
   else if (filter === 'activos') query = query.eq('archivado', false);
@@ -30,7 +50,6 @@ export async function getPatients(filter?: 'activos' | 'archivados') {
   const { data: patients, error } = await query.order('fecha_registro', { ascending: false });
   if (error) throw error;
 
-  // Obtener último tratamiento y saldo de todos los pacientes en una sola query
   const ids = (patients || []).map((p: { id: number }) => p.id);
   let treatments: { paciente_id: number; nombre_tratamiento: string; estatus: string; costo_total: number; monto_pagado: number; id: number }[] = [];
   if (ids.length > 0) {
@@ -166,21 +185,24 @@ export async function getPatientsAtRisk(): Promise<PatientAtRisk[]> {
 
   if (pErr || !patients) return [];
 
-  // Obtener la última cita de cada paciente
+  // Obtener la última cita de cada paciente.
+  // appointments usa columnas fecha (DATE) + hora_inicio (TIME). Ordenamos por
+  // ambas para que la "última" sea la cita más reciente realmente.
   const { data: appointments } = await db
     .from('appointments')
-    .select('paciente_id, fecha_hora')
+    .select('paciente_id, fecha, hora_inicio')
     .in('paciente_id', patientIds)
-    .order('fecha_hora', { ascending: false });
+    .order('fecha', { ascending: false })
+    .order('hora_inicio', { ascending: false });
 
   const now = new Date();
 
   return patients
     .map((p: { id: number; nombre: string; telefono: string }) => {
       const lastAppt = (appointments || []).find(
-        (a: { paciente_id: number; fecha_hora: string }) => a.paciente_id === p.id
+        (a: { paciente_id: number; fecha: string; hora_inicio: string }) => a.paciente_id === p.id
       );
-      const lastDate = lastAppt ? new Date(lastAppt.fecha_hora) : new Date(0);
+      const lastDate = lastAppt ? new Date(`${lastAppt.fecha}T${lastAppt.hora_inicio || '00:00:00'}`) : new Date(0);
       const diasSinVisita = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
       const ticket = Math.max(
         ...treatments

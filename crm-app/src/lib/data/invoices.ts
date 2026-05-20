@@ -2,16 +2,16 @@ import { getSupabaseAdmin } from '../supabase';
 
 export interface Invoice {
     id: number;
-    paciente_id: number;
+    paciente_id: number | null;
     tratamiento_id: number | null;
-    razon_social: string;
-    rfc: string;
-    direccion_fiscal: string;
-    uso_cfdi: string;
+    razon_social: string | null;
+    rfc: string | null;
+    direccion_fiscal: string | null;
+    uso_cfdi: string | null;
     monto: number;
     fecha: string;
-    numero_factura: string;
-    concepto: string;
+    numero_factura: string | null;
+    concepto: string | null;
     tipo: 'factura' | 'abono' | 'servicio';
     estatus: string;
     created_at: string;

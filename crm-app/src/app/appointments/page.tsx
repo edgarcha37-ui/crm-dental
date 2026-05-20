@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
+import AppointmentModal from '@/components/AppointmentModal';
 
 interface Appointment {
     id: number;
@@ -72,20 +73,19 @@ export default function AppointmentsPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [activeView, setActiveView] = useState<ViewType>('Semana');
     const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
 
-    useEffect(() => {
-        async function fetchAppointments() {
-            try {
-                // Para vista mes/semana traemos más rango; para día solo ese día
-                const res = await fetch('/api/appointments');
-                const data = await res.json();
-                setAppointments(Array.isArray(data) ? data : []);
-            } catch (err) {
-                console.error('Error citas:', err);
-            } finally { setLoading(false); }
-        }
-        fetchAppointments();
-    }, []);
+    async function fetchAppointments() {
+        try {
+            const res = await fetch('/api/appointments');
+            const data = await res.json();
+            setAppointments(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Error citas:', err);
+        } finally { setLoading(false); }
+    }
+
+    useEffect(() => { fetchAppointments(); }, []);
 
     function navigate(dir: number) {
         const d = new Date(currentDate);
@@ -251,7 +251,7 @@ export default function AppointmentsPage() {
                             </button>
                         ))}
                     </div>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-accent-blue)] text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-all shadow-md">
+                    <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-accent-blue)] text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-all shadow-md">
                         <Plus size={18}/> Nueva Cita
                     </button>
                 </div>
@@ -288,6 +288,12 @@ export default function AppointmentsPage() {
                     );
                 })}
             </div>
+
+            <AppointmentModal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                onCreated={() => fetchAppointments()}
+            />
         </div>
     );
 }

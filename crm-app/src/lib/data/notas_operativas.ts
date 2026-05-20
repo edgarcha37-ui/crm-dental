@@ -30,7 +30,7 @@ export async function getNotasOperativas() {
   });
 }
 
-export async function createNotaOperativa(data: Omit<NotaOperativa, 'id' | 'fecha_creacion'>) {
+export async function createNotaOperativa(data: Omit<NotaOperativa, 'id' | 'fecha_creacion' | 'usuario_id'> & { usuario_id?: number | null }) {
   const db = getSupabaseAdmin();
   const { data: result, error } = await db.from('notas_operativas').insert(data).select().single();
   if (error) throw error;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getInvoices, getInvoicesByPatient, createInvoice, getInvoiceStats } from '@/lib/data/invoices';
+import { createInvoiceSchema, zodErrorResponse } from '@/schemas';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -7,13 +8,27 @@ export async function GET(request: NextRequest) {
     const stats = searchParams.get('stats');
     const pacienteId = searchParams.get('paciente_id');
 
-    if (stats === 'true') return NextResponse.json(await getInvoiceStats());
-    if (pacienteId) return NextResponse.json(await getInvoicesByPatient(Number(pacienteId)));
-    return NextResponse.json(await getInvoices(filter || undefined));
+    try {
+        if (stats === 'true') return NextResponse.json(await getInvoiceStats());
+        if (pacienteId) return NextResponse.json(await getInvoicesByPatient(Number(pacienteId)));
+        return NextResponse.json(await getInvoices(filter || undefined));
+    } catch (err) {
+        console.error('GET /api/invoices:', err);
+        return NextResponse.json({ error: 'Error al obtener facturas' }, { status: 500 });
+    }
 }
 
 export async function POST(request: NextRequest) {
-    const body = await request.json();
-    const result = await createInvoice(body);
-    return NextResponse.json(result, { status: 201 });
+    try {
+        const body = await request.json();
+        const parsed = createInvoiceSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
+        }
+        const result = await createInvoice(parsed.data);
+        return NextResponse.json(result, { status: 201 });
+    } catch (err) {
+        console.error('POST /api/invoices:', err);
+        return NextResponse.json({ error: 'Error al crear factura' }, { status: 500 });
+    }
 }

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Search, Plus, Clock, AlertTriangle, CheckCircle, Circle, Archive, Package, Wrench, FlaskConical, Calendar as CalendarIcon } from 'lucide-react';
+import LabWorksPanel from '@/components/LabWorksPanel';
+import { NotaOperativaCategoria, NotePrioridad } from '@/types';
 
 interface NotaOperativa {
     id: number;
@@ -35,8 +37,13 @@ export default function NotesPage() {
     const [notas, setNotas] = useState<NotaOperativa[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({
-        titulo: '', categoria: 'Suministros' as any, prioridad: 'Media' as any, fecha_vencimiento: ''
+    const [formData, setFormData] = useState<{
+        titulo: string;
+        categoria: NotaOperativaCategoria;
+        prioridad: NotePrioridad;
+        fecha_vencimiento: string;
+    }>({
+        titulo: '', categoria: 'Suministros', prioridad: 'Media', fecha_vencimiento: ''
     });
 
     async function fetchNotas() {
@@ -257,7 +264,7 @@ export default function NotesPage() {
                                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Categoría</label>
                                     <select
                                         value={formData.categoria}
-                                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
+                                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value as NotaOperativaCategoria })}
                                         className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"
                                     >
                                         <option value="Suministros">📦 Suministros</option>
@@ -269,7 +276,7 @@ export default function NotesPage() {
                                     <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Prioridad</label>
                                     <select
                                         value={formData.prioridad}
-                                        onChange={(e) => setFormData({ ...formData, prioridad: e.target.value as any })}
+                                        onChange={(e) => setFormData({ ...formData, prioridad: e.target.value as NotePrioridad })}
                                         className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
                                     >
                                         <option value="Alta">🔴 Alta (Crítica)</option>
@@ -299,6 +306,8 @@ export default function NotesPage() {
                     </div>
                 </div>
             )}
+
+            <LabWorksPanel />
         </div>
     );
 }

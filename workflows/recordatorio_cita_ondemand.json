@@ -1,0 +1,99 @@
+{
+  "name": "Recordatorio Cita On-Demand",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recordatorio-cita-ondemand",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f5e6d7c8-0001-0001-0001-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "recordatorio-cita-ondemand"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "secret-check",
+              "leftValue": "={{ $json.headers['x-crm-secret'] }}",
+              "rightValue": "dRXpyGMsGos8JjjRcgFPZVlxsUB8FlITVt7WrZWSziY",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f5e6d7c8-0002-0002-0002-000000000002",
+      "name": "Valida Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const b = $json.body || {};\nconst nombre = (b.paciente_nombre || 'Paciente').split(' ')[0];\nconst clinica = 'OrbitAI Dental';\nconst hora = (b.hora_inicio || '').slice(0,5);\nconst fechaISO = b.fecha || '';\n// Formato amigable: 22 may.\nconst fechaTxt = fechaISO ? new Date(fechaISO + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';\nconst motivo = b.motivo || 'tu cita';\nconst mensaje = `Hola ${nombre}, te recordamos tu cita en ${clinica}${fechaTxt ? ` el ${fechaTxt}` : ''}${hora ? ` a las ${hora}h` : ''} (${motivo}). Responde CONFIRMO para confirmar o REAGENDAR si necesitas cambiarla.`;\nreturn { json: { appointment_id: b.appointment_id, paciente_id: b.paciente_id, telefono: b.telefono, paciente_nombre: b.paciente_nombre, mensaje, clinica } };"
+      },
+      "id": "f5e6d7c8-0003-0003-0003-000000000003",
+      "name": "Construye Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Placeholder de envío WhatsApp.\n// Cuando Meta apruebe el número, reemplazar este nodo por\n// 'HTTP Request' → POST https://graph.facebook.com/v21.0/{phone_number_id}/messages\nconsole.log('[whatsapp:ondemand]', JSON.stringify($json));\nreturn { json: { ...$json, enviado: true, canal: 'placeholder' } };"
+      },
+      "id": "f5e6d7c8-0004-0004-0004-000000000004",
+      "name": "Enviar WhatsApp (placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, appointment_id: $json.appointment_id, telefono: $json.telefono }) }}",
+        "options": {}
+      },
+      "id": "f5e6d7c8-0005-0005-0005-000000000005",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 401,
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'invalid secret' }) }}",
+        "options": {}
+      },
+      "id": "f5e6d7c8-0006-0006-0006-000000000006",
+      "name": "Responder 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 420]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Valida Secret", "type": "main", "index": 0 }]] },
+    "Valida Secret": {
+      "main": [
+        [{ "node": "Construye Mensaje", "type": "main", "index": 0 }],
+        [{ "node": "Responder 401", "type": "main", "index": 0 }]
+      ]
+    },
+    "Construye Mensaje": { "main": [[{ "node": "Enviar WhatsApp (placeholder)", "type": "main", "index": 0 }]] },
+    "Enviar WhatsApp (placeholder)": { "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getPresignedUploadUrl, createArchivoRecord, getArchivosByPaciente, deleteArchivo } from '@/lib/data/archivos';
+import { zodErrorResponse } from '@/schemas';
+
+const presignedSchema = z.object({
+  paciente_id: z.number().int().positive(),
+  nombre_archivo: z.string().trim().min(1),
+  tipo_archivo: z.string().optional(),
+  peso_archivo: z.number().nonnegative().optional(),
+  categoria: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -9,25 +19,25 @@ export async function GET(request: NextRequest) {
     const archivos = await getArchivosByPaciente(pacienteId);
     return NextResponse.json(archivos);
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('GET /api/archivos:', err);
+    return NextResponse.json({ error: 'Error al obtener archivos' }, { status: 500 });
   }
 }
 
-// POST /api/archivos — obtener presigned URL para subir directamente a Supabase Storage
+// POST /api/archivos — devuelve presigned URL para subir directo a Supabase Storage
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { paciente_id, nombre_archivo, tipo_archivo, peso_archivo, categoria } = body;
-
-    if (!paciente_id || !nombre_archivo) {
-      return NextResponse.json({ error: 'paciente_id y nombre_archivo requeridos' }, { status: 400 });
+    const parsed = presignedSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
     }
+    const { paciente_id, nombre_archivo, tipo_archivo, peso_archivo, categoria } = parsed.data;
 
-    const presigned = await getPresignedUploadUrl(Number(paciente_id), nombre_archivo, tipo_archivo || 'application/octet-stream');
+    const presigned = await getPresignedUploadUrl(paciente_id, nombre_archivo, tipo_archivo || 'application/octet-stream');
 
-    // Guardar registro en BD (url_publica ya disponible, el archivo subirá con presigned URL)
     const archivo = await createArchivoRecord({
-      paciente_id: Number(paciente_id),
+      paciente_id,
       nombre_archivo,
       url_publica: presigned.publicUrl,
       storage_path: presigned.path,
@@ -39,7 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ archivo, signedUrl: presigned.signedUrl, token: presigned.token });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[archivos POST]', msg);
+    console.error('POST /api/archivos:', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -52,6 +62,7 @@ export async function DELETE(request: NextRequest) {
     await deleteArchivo(id);
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('DELETE /api/archivos:', err);
+    return NextResponse.json({ error: 'Error al eliminar archivo' }, { status: 500 });
   }
 }
