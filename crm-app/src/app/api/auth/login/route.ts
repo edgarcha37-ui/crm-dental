@@ -66,9 +66,11 @@ export async function POST(request: NextRequest) {
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        // 'strict' bloquea que la cookie viaje en navegaciones cross-site,
-        // protección adicional contra ataques CSRF que aprovechen sesiones activas.
-        sameSite: 'strict',
+        // 'lax' permite que la cookie viaje en navegaciones top-level same-site
+        // (ej. el redirect post-login). La validación de Origin arriba ya bloquea
+        // ataques CSRF cross-site, así que 'strict' era doble seguridad innecesaria
+        // que en Cloudflare+navegación cliente bloqueaba el set-cookie.
+        sameSite: 'lax',
         path: '/',
         maxAge: SESSION_TTL_SECONDS,
     });
