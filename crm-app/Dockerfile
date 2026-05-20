@@ -2,6 +2,7 @@
 # ==============================================================
 # CRM Dental — Imagen para Dokploy (crmbeta.orbitai.pro)
 # Next.js 16 standalone, Node 20-alpine, multi-stage.
+# Rebuild trigger: F4 endpoints (doctors, lab-works, settings, etc.)
 # ==============================================================
 
 # --- Deps ---
