@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, migration: id });
   } catch (e) {
     try { await client.end(); } catch {}
-    logApiError('POST /api/_admin/migrate', e);
+    logApiError('POST /api/admin/migrate', e);
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Error aplicando migración' }, { status: 500 });
   }
 }
