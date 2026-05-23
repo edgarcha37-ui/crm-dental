@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
 import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
+import { requireRole } from '@/lib/require-role';
 import { getPatientById, updatePatient, archivarPaciente, deletePatient } from '@/lib/data/patients';
 import { getTreatmentsByPatient } from '@/lib/data/treatments';
 import { updatePatientSchema, zodErrorResponse } from '@/schemas';
@@ -53,6 +54,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const denied = await requireRole(request, ['admin']);
+        if (denied) return denied;
+
         const { id } = await params;
         const patientId = Number(id);
         if (!Number.isInteger(patientId) || patientId <= 0) {

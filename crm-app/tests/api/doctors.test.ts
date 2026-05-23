@@ -13,7 +13,10 @@ import { GET, POST } from '@/app/api/doctors/route';
 import { GET as GET_ID, PUT as PUT_ID, DELETE as DELETE_ID } from '@/app/api/doctors/[id]/route';
 
 function makeRequest(url: string, init?: RequestInit) {
-  return new Request(url, init) as unknown as Parameters<typeof GET>[0];
+  // Bypass requireRole inyectando la INTERNAL_API_KEY que está en tests/setup.ts
+  const headers = new Headers(init?.headers);
+  if (!headers.has('x-internal-key')) headers.set('x-internal-key', 'test-internal-key');
+  return new Request(url, { ...init, headers }) as unknown as Parameters<typeof GET>[0];
 }
 
 beforeEach(() => {

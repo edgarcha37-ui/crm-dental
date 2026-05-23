@@ -10,7 +10,9 @@
 export const SESSION_COOKIE = 'crm_session';
 export const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 horas
 
-type SessionPayload = { u: string; exp: number };
+import type { Role } from './permissions';
+
+type SessionPayload = { u: string; exp: number; r?: Role };
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -47,8 +49,8 @@ function getSecret(): string {
     return s;
 }
 
-export async function signSession(user: string, ttlSeconds = SESSION_TTL_SECONDS): Promise<string> {
-    const payload: SessionPayload = { u: user, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
+export async function signSession(user: string, role: Role = 'admin', ttlSeconds = SESSION_TTL_SECONDS): Promise<string> {
+    const payload: SessionPayload = { u: user, r: role, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
     const payloadB64 = b64urlEncode(enc.encode(JSON.stringify(payload)));
     const key = await importKey(getSecret());
     const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payloadB64));

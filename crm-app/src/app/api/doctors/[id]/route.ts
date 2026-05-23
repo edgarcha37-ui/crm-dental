@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
 import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
+import { requireRole } from '@/lib/require-role';
 import { getDoctorById, updateDoctor, deleteDoctor } from '@/lib/data/doctors';
 import { updateDoctorSchema, zodErrorResponse } from '@/schemas';
 
@@ -20,6 +21,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const denied = await requireRole(request, ['admin']);
+    if (denied) return denied;
+
     const { id } = await params;
     const docId = parseId(id);
     if (!docId) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
@@ -47,6 +51,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const denied = await requireRole(request, ['admin']);
+    if (denied) return denied;
+
     const { id } = await params;
     const docId = parseId(id);
     if (!docId) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
 import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
+import { requireRole } from '@/lib/require-role';
 import { getDoctors, createDoctor } from '@/lib/data/doctors';
 import { createDoctorSchema, zodErrorResponse } from '@/schemas';
 
@@ -18,6 +19,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireRole(request, ['admin']);
+    if (denied) return denied;
+
     const body = await request.json();
     const parsed = createDoctorSchema.safeParse(body);
     if (!parsed.success) {
