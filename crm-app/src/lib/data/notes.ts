@@ -12,7 +12,7 @@ export interface Note {
   completada: boolean;
   fecha_vencimiento: string | null;
   categoria: string | null;
-  fecha_creacion: string;
+  created_at: string;
   updated_at: string;
   paciente_nombre?: string;
 }
@@ -30,7 +30,7 @@ export async function getNotes() {
   const { data, error } = await db
     .from('notes')
     .select('*, patients(nombre)')
-    .order('fecha_creacion', { ascending: false });
+    .order('created_at', { ascending: false });
   if (error) throw error;
   const rows = ((data || []) as unknown[]).map((n) => {
     const row = n as { patients?: { nombre: string };[key: string]: unknown };
@@ -53,7 +53,7 @@ export async function getNotesByPatient(pacienteId: number) {
     .from('notes')
     .select('*, patients(nombre)')
     .eq('paciente_id', pacienteId)
-    .order('fecha_creacion', { ascending: false });
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return ((data || []) as unknown[]).map((n) => {
     const row = n as { patients?: { nombre: string };[key: string]: unknown };
@@ -61,7 +61,7 @@ export async function getNotesByPatient(pacienteId: number) {
   });
 }
 
-export async function createNote(data: Partial<Omit<Note, 'id' | 'fecha_creacion' | 'updated_at' | 'paciente_nombre'>> & { contenido: string; tipo: 'nota' | 'recordatorio' | 'tarea'; prioridad: NotePrioridad }) {
+export async function createNote(data: Partial<Omit<Note, 'id' | 'created_at' | 'updated_at' | 'paciente_nombre'>> & { contenido: string; tipo: 'nota' | 'recordatorio' | 'tarea'; prioridad: NotePrioridad }) {
   const db = getSupabaseAdmin();
   const { data: result, error } = await db.from('notes').insert({
     contenido: data.contenido,

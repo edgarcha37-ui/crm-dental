@@ -150,7 +150,7 @@ export default function PatientDetailPage() {
     const timelineItems = [
         ...appointments.map(a => ({ type: 'cita' as const, date: new Date(a.fecha+'T12:00:00'), data: a })),
         ...invoices.map(i => ({ type: 'factura' as const, date: new Date(i.fecha), data: i })),
-        ...notes.map(n => ({ type: 'nota' as const, date: new Date(n.fecha_creacion), data: n }))
+        ...notes.map(n => ({ type: 'nota' as const, date: new Date(n.created_at), data: n }))
     ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
     return (
@@ -334,7 +334,7 @@ export default function PatientDetailPage() {
                                 <div key={n.id} className="p-5 rounded-xl border border-yellow-200 bg-yellow-50/30">
                                     <div className="flex justify-between items-start mb-2">
                                         <p className="text-sm font-bold text-gray-800">{n.titulo}</p>
-                                        <p className="text-[10px] font-medium text-gray-500">{new Date(n.fecha_creacion).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'})}</p>
+                                        <p className="text-[10px] font-medium text-gray-500">{new Date(n.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'})}</p>
                                     </div>
                                     <p className="text-sm text-gray-600 leading-relaxed">{n.contenido}</p>
                                 </div>

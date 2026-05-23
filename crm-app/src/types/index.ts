@@ -112,7 +112,7 @@ export interface Note {
   categoria: string | null;
   completada: boolean;
   fecha_vencimiento: string | null;
-  fecha_creacion: string;
+  created_at: string;
   updated_at: string;
   paciente_nombre?: string;
 }
