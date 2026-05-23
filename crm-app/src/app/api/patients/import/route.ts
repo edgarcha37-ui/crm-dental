@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { z } from 'zod';
 import { createPatient } from '@/lib/data/patients';
 import { zodErrorResponse } from '@/schemas';
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
-    console.error('POST /api/patients/import:', e);
+    logApiError('POST /api/patients/import', e);
     return NextResponse.json({ error: 'Error al procesar import' }, { status: 500 });
   }
 }

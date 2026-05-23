@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { z } from 'zod';
 import { getPresignedUploadUrl, createArchivoRecord, getArchivosByPaciente, deleteArchivo } from '@/lib/data/archivos';
 import { zodErrorResponse } from '@/schemas';
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const archivos = await getArchivosByPaciente(pacienteId);
     return NextResponse.json(archivos);
   } catch (err) {
-    console.error('GET /api/archivos:', err);
+    logApiError('GET /api/archivos', err);
     return NextResponse.json({ error: 'Error al obtener archivos' }, { status: 500 });
   }
 }
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ archivo, signedUrl: presigned.signedUrl, token: presigned.token });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('POST /api/archivos:', msg);
+    logApiError('POST /api/archivos', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -62,7 +63,7 @@ export async function DELETE(request: NextRequest) {
     await deleteArchivo(id);
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('DELETE /api/archivos:', err);
+    logApiError('DELETE /api/archivos', err);
     return NextResponse.json({ error: 'Error al eliminar archivo' }, { status: 500 });
   }
 }

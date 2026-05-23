@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getPatients, createPatient, getPatientById, searchPatients, getPatientStats } from '@/lib/data/patients';
 import { triggerN8n } from '@/lib/n8n';
 import { createPatientSchema, zodErrorResponse } from '@/schemas';
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
         if (query) return NextResponse.json(await searchPatients(query));
         return NextResponse.json(await getPatients(filter || undefined));
     } catch (err) {
-        console.error('GET /api/patients:', err);
+        logApiError('GET /api/patients', err);
         return NextResponse.json({ error: 'Error al obtener pacientes' }, { status: 500 });
     }
 }
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
-        console.error('POST /api/patients:', err);
+        logApiError('POST /api/patients', err);
         return NextResponse.json({ error: 'Error al crear paciente' }, { status: 500 });
     }
 }

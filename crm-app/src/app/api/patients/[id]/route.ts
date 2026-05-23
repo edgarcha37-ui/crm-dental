@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getPatientById, updatePatient, archivarPaciente, deletePatient } from '@/lib/data/patients';
 import { getTreatmentsByPatient } from '@/lib/data/treatments';
 import { updatePatientSchema, zodErrorResponse } from '@/schemas';
@@ -33,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         await updatePatient(patientId, data);
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('PUT /api/patients/[id]:', err);
+        logApiError('PUT /api/patients/[id]', err);
         return NextResponse.json({ error: 'Error al actualizar paciente' }, { status: 500 });
     }
 }
@@ -48,7 +49,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         await deletePatient(patientId);
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('DELETE /api/patients/[id]:', err);
+        logApiError('DELETE /api/patients/[id]', err);
         return NextResponse.json({ error: 'Error al eliminar paciente' }, { status: 500 });
     }
 }

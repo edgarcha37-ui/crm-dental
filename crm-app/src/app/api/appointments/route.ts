@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getAppointments, getAppointmentsByPatient, createAppointment, getTodayAppointmentCount } from '@/lib/data/appointments';
 import { createAppointmentSchema, zodErrorResponse } from '@/schemas';
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
         if (pacienteId) return NextResponse.json(await getAppointmentsByPatient(Number(pacienteId)));
         return NextResponse.json(await getAppointments(fecha || undefined));
     } catch (err) {
-        console.error('GET /api/appointments:', err);
+        logApiError('GET /api/appointments', err);
         return NextResponse.json({ error: 'Error al obtener citas' }, { status: 500 });
     }
 }
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
         const result = await createAppointment(parsed.data);
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
-        console.error('POST /api/appointments:', err);
+        logApiError('POST /api/appointments', err);
         return NextResponse.json({ error: 'Error al crear cita' }, { status: 500 });
     }
 }

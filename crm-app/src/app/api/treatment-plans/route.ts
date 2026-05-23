@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { z } from 'zod';
 import { getPlansByPatient, createPlan } from '@/lib/data/treatment-plans';
 import { zodErrorResponse } from '@/schemas';
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await getPlansByPatient(pacienteId));
   } catch (e) {
-    console.error('GET /api/treatment-plans:', e);
+    logApiError('GET /api/treatment-plans', e);
     return NextResponse.json({ error: 'Error al obtener planes' }, { status: 500 });
   }
 }
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     const result = await createPlan(parsed.data);
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
-    console.error('POST /api/treatment-plans:', e);
+    logApiError('POST /api/treatment-plans', e);
     return NextResponse.json({ error: 'Error al crear plan' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getDatosFiscales, createFactura } from '@/lib/data/facturacion';
 import { getPatientById } from '@/lib/data/patients';
 
@@ -66,14 +67,14 @@ export async function POST(request: NextRequest) {
 
     if (!n8nRes.ok) {
       const errText = await n8nRes.text();
-      console.error('[facturacion/crear] Error en webhook n8n:', errText);
+      logApiError('[facturacion/crear] Error en webhook n8n', errText);
       return NextResponse.json({ success: false, factura_id: factura.id, error: 'Webhook respondió con error', detail: errText }, { status: 502 });
     }
 
     return NextResponse.json({ success: true, factura_id: factura.id, webhook: 'enviado' });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[facturacion/crear]', msg);
+    logApiError('[facturacion/crear]', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

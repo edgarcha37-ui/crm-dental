@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getMedicalHistory, upsertMedicalHistory } from '@/lib/data/medical-history';
 import { updateMedicalHistorySchema, zodErrorResponse } from '@/schemas';
 
@@ -15,7 +16,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const history = await getMedicalHistory(pid);
     return NextResponse.json(history);
   } catch (e) {
-    console.error('GET medical-history:', e);
+    logApiError('GET medical-history', e);
     return NextResponse.json({ error: 'Error al obtener historia clínica' }, { status: 500 });
   }
 }
@@ -33,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await upsertMedicalHistory(pid, parsed.data);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('PUT medical-history:', e);
+    logApiError('PUT medical-history', e);
     return NextResponse.json({ error: 'Error al guardar historia clínica' }, { status: 500 });
   }
 }

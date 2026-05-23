@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getLabWorks, getActiveLabWorks, createLabWork } from '@/lib/data/lab-works';
 import { createLabWorkSchema, zodErrorResponse } from '@/schemas';
 import { LabWorkEstado } from '@/types';
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(await getLabWorks(estado || undefined));
   } catch (e) {
-    console.error('GET /api/lab-works:', e);
+    logApiError('GET /api/lab-works', e);
     return NextResponse.json({ error: 'Error al obtener trabajos de laboratorio' }, { status: 500 });
   }
 }
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     const result = await createLabWork(parsed.data);
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
-    console.error('POST /api/lab-works:', e);
+    logApiError('POST /api/lab-works', e);
     return NextResponse.json({ error: 'Error al crear trabajo' }, { status: 500 });
   }
 }

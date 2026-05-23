@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { triggerN8n } from '@/lib/n8n';
 
@@ -53,7 +54,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ ok: true, telefono: paciente.telefono });
   } catch (e) {
-    console.error('POST /api/appointments/[id]/remind:', e);
+    logApiError('POST /api/appointments/[id]/remind', e);
     return NextResponse.json({ error: 'Error al enviar recordatorio' }, { status: 500 });
   }
 }

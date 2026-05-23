@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getInsights, insertInsight, markInsightSeen } from '@/lib/data/insights';
 
 export async function GET() {
@@ -6,7 +7,7 @@ export async function GET() {
         const insights = await getInsights();
         return NextResponse.json(insights);
     } catch (err) {
-        console.error('GET /api/insights error:', err);
+        logApiError('GET /api/insights error', err);
         return NextResponse.json({ error: 'Error al obtener insights' }, { status: 500 });
     }
 }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
-        console.error('POST /api/insights error:', err);
+        logApiError('POST /api/insights error', err);
         return NextResponse.json({ error: 'Error al insertar insight' }, { status: 500 });
     }
 }
@@ -62,7 +63,7 @@ export async function PATCH(request: NextRequest) {
         await markInsightSeen(Number(id));
         return NextResponse.json({ ok: true });
     } catch (err) {
-        console.error('PATCH /api/insights error:', err);
+        logApiError('PATCH /api/insights error', err);
         return NextResponse.json({ error: 'Error al actualizar insight' }, { status: 500 });
     }
 }

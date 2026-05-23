@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getInvoices, getInvoicesByPatient, createInvoice, getInvoiceStats } from '@/lib/data/invoices';
 import { createInvoiceSchema, zodErrorResponse } from '@/schemas';
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
         if (pacienteId) return NextResponse.json(await getInvoicesByPatient(Number(pacienteId)));
         return NextResponse.json(await getInvoices(filter || undefined));
     } catch (err) {
-        console.error('GET /api/invoices:', err);
+        logApiError('GET /api/invoices', err);
         return NextResponse.json({ error: 'Error al obtener facturas' }, { status: 500 });
     }
 }
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
         const result = await createInvoice(parsed.data);
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
-        console.error('POST /api/invoices:', err);
+        logApiError('POST /api/invoices', err);
         return NextResponse.json({ error: 'Error al crear factura' }, { status: 500 });
     }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getNotes, getNotesByPatient, createNote, updateNote, deleteNote, toggleNoteComplete } from '@/lib/data/notes';
 import { createNoteSchema, zodErrorResponse } from '@/schemas';
 import { z } from 'zod';
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
         if (pacienteId) return NextResponse.json(await getNotesByPatient(Number(pacienteId)));
         return NextResponse.json(await getNotes());
     } catch (err) {
-        console.error('GET /api/notes:', err);
+        logApiError('GET /api/notes', err);
         return NextResponse.json({ error: 'Error al obtener notas' }, { status: 500 });
     }
 }
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
         const result = await createNote(parsed.data);
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
-        console.error('POST /api/notes:', err);
+        logApiError('POST /api/notes', err);
         return NextResponse.json({ error: 'Error al crear nota' }, { status: 500 });
     }
 }
@@ -47,7 +48,7 @@ export async function PUT(request: NextRequest) {
         await updateNote(id, data);
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('PUT /api/notes:', err);
+        logApiError('PUT /api/notes', err);
         return NextResponse.json({ error: 'Error al actualizar nota' }, { status: 500 });
     }
 }
@@ -60,7 +61,7 @@ export async function DELETE(request: NextRequest) {
         await deleteNote(Number(id));
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('DELETE /api/notes:', err);
+        logApiError('DELETE /api/notes', err);
         return NextResponse.json({ error: 'Error al eliminar nota' }, { status: 500 });
     }
 }

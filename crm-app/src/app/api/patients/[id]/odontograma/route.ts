@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { z } from 'zod';
 import { getOdontograma, upsertOdontograma } from '@/lib/data/odontograma';
 import { zodErrorResponse } from '@/schemas';
@@ -28,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     if (!pid) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     return NextResponse.json(await getOdontograma(pid));
   } catch (e) {
-    console.error('GET odontograma:', e);
+    logApiError('GET odontograma', e);
     return NextResponse.json({ error: 'Error al obtener odontograma' }, { status: 500 });
   }
 }
@@ -44,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await upsertOdontograma(pid, parsed.data);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('PUT odontograma:', e);
+    logApiError('PUT odontograma', e);
     return NextResponse.json({ error: 'Error al guardar odontograma' }, { status: 500 });
   }
 }

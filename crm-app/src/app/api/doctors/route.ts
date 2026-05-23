@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getDoctors, createDoctor } from '@/lib/data/doctors';
 import { createDoctorSchema, zodErrorResponse } from '@/schemas';
 
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const data = await getDoctors(!incluirInactivos);
     return NextResponse.json(data);
   } catch (e) {
-    console.error('GET /api/doctors:', e);
+    logApiError('GET /api/doctors', e);
     return NextResponse.json({ error: 'Error al obtener doctores' }, { status: 500 });
   }
 }
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     const result = await createDoctor(parsed.data);
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
-    console.error('POST /api/doctors:', e);
+    logApiError('POST /api/doctors', e);
     return NextResponse.json({ error: 'Error al crear doctor' }, { status: 500 });
   }
 }

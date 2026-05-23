@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getMetricsByKey, getAllMetrics, upsertMetric, getLiveMetrics } from '@/lib/data/metrics';
 import { insertInsight } from '@/lib/data/insights';
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
                 });
             }
         } catch (e) {
-            console.error('Error auto-generando insight', e);
+            logApiError('Error auto-generando insight', e);
         }
     }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { updateLabWork, deleteLabWork } from '@/lib/data/lab-works';
 import { updateLabWorkSchema, zodErrorResponse } from '@/schemas';
 
@@ -20,7 +21,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await updateLabWork(lwId, parsed.data);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('PUT /api/lab-works/[id]:', e);
+    logApiError('PUT /api/lab-works/[id]', e);
     return NextResponse.json({ error: 'Error al actualizar trabajo' }, { status: 500 });
   }
 }
@@ -33,7 +34,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     await deleteLabWork(lwId);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('DELETE /api/lab-works/[id]:', e);
+    logApiError('DELETE /api/lab-works/[id]', e);
     return NextResponse.json({ error: 'Error al eliminar trabajo' }, { status: 500 });
   }
 }

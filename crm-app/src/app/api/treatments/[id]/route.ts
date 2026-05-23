@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { updateTreatment } from '@/lib/data/treatments';
 import { updateTreatmentSchema, zodErrorResponse } from '@/schemas';
 
@@ -20,7 +21,7 @@ export async function PUT(
         await updateTreatment(treatmentId, parsed.data);
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('PUT /api/treatments/[id]:', err);
+        logApiError('PUT /api/treatments/[id]', err);
         return NextResponse.json({ error: 'Error al actualizar tratamiento' }, { status: 500 });
     }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getNotasOperativas, createNotaOperativa, updateNotaOperativa, deleteNotaOperativa } from '@/lib/data/notas_operativas';
 import { createNotaOperativaSchema, updateNotaOperativaSchema, zodErrorResponse } from '@/schemas';
 
@@ -7,7 +8,7 @@ export async function GET() {
         const notes = await getNotasOperativas();
         return NextResponse.json(notes);
     } catch (err) {
-        console.error('GET /api/notas-operativas:', err);
+        logApiError('GET /api/notas-operativas', err);
         return NextResponse.json({ error: 'Error al obtener notas operativas' }, { status: 500 });
     }
 }
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
         const note = await createNotaOperativa(parsed.data);
         return NextResponse.json(note, { status: 201 });
     } catch (err) {
-        console.error('POST /api/notas-operativas:', err);
+        logApiError('POST /api/notas-operativas', err);
         return NextResponse.json({ error: 'Error al crear nota operativa' }, { status: 500 });
     }
 }
@@ -38,7 +39,7 @@ export async function PUT(request: NextRequest) {
         await updateNotaOperativa(id, data);
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('PUT /api/notas-operativas:', err);
+        logApiError('PUT /api/notas-operativas', err);
         return NextResponse.json({ error: 'Error al actualizar nota operativa' }, { status: 500 });
     }
 }
@@ -51,7 +52,7 @@ export async function DELETE(request: NextRequest) {
         await deleteNotaOperativa(Number(id));
         return NextResponse.json({ success: true });
     } catch (err) {
-        console.error('DELETE /api/notas-operativas:', err);
+        logApiError('DELETE /api/notas-operativas', err);
         return NextResponse.json({ error: 'Error al eliminar nota operativa' }, { status: 500 });
     }
 }

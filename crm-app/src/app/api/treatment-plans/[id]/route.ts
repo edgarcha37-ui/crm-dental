@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { z } from 'zod';
 import { updatePlan, deletePlan } from '@/lib/data/treatment-plans';
 import { zodErrorResponse } from '@/schemas';
@@ -27,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await updatePlan(pid, parsed.data);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('PUT /api/treatment-plans/[id]:', e);
+    logApiError('PUT /api/treatment-plans/[id]', e);
     return NextResponse.json({ error: 'Error al actualizar plan' }, { status: 500 });
   }
 }
@@ -40,7 +41,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     await deletePlan(pid);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('DELETE /api/treatment-plans/[id]:', e);
+    logApiError('DELETE /api/treatment-plans/[id]', e);
     return NextResponse.json({ error: 'Error al eliminar plan' }, { status: 500 });
   }
 }

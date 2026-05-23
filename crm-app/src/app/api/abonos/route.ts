@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/logger';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { createAbonoSchema, zodErrorResponse } from '@/schemas';
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
             .eq('id', tratamiento_id);
 
         if (updateErr) {
-            console.error('abono update treatment:', updateErr);
+            logApiError('abono update treatment', updateErr);
             return NextResponse.json({ error: 'Error al actualizar tratamiento' }, { status: 500 });
         }
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (invoiceErr) {
-            console.error('abono insert invoice:', invoiceErr);
+            logApiError('abono insert invoice', invoiceErr);
             return NextResponse.json({ error: 'Error al registrar la factura' }, { status: 500 });
         }
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
             saldo_restante: Math.max(0, treatment.costo_total - nuevoMontoPagado),
         }, { status: 201 });
     } catch (err) {
-        console.error('POST /api/abonos:', err);
+        logApiError('POST /api/abonos', err);
         return NextResponse.json({ error: 'Error al procesar abono' }, { status: 500 });
     }
 }
