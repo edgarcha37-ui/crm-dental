@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { getPatientById, updatePatient, archivarPaciente, deletePatient } from '@/lib/data/patients';
 import { getTreatmentsByPatient } from '@/lib/data/treatments';
 import { updatePatientSchema, zodErrorResponse } from '@/schemas';
@@ -29,9 +30,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
         }
         const data = parsed.data;
-        if (data.accion === 'archivar') { await archivarPaciente(patientId, true); return NextResponse.json({ success: true }); }
-        if (data.accion === 'restaurar') { await archivarPaciente(patientId, false); return NextResponse.json({ success: true }); }
+        const actor = getActorFromRequest(request);
+        const ip = getIpFromRequest(request);
+        if (data.accion === 'archivar') {
+            await archivarPaciente(patientId, true);
+            audit({ actor, action: 'UPDATE', entity: 'patients', entity_id: patientId, diff: { after: { archivado: true } }, route: 'PUT /api/patients/[id]', ip });
+            return NextResponse.json({ success: true });
+        }
+        if (data.accion === 'restaurar') {
+            await archivarPaciente(patientId, false);
+            audit({ actor, action: 'UPDATE', entity: 'patients', entity_id: patientId, diff: { after: { archivado: false } }, route: 'PUT /api/patients/[id]', ip });
+            return NextResponse.json({ success: true });
+        }
         await updatePatient(patientId, data);
+        audit({ actor, action: 'UPDATE', entity: 'patients', entity_id: patientId, diff: { after: data }, route: 'PUT /api/patients/[id]', ip });
         return NextResponse.json({ success: true });
     } catch (err) {
         logApiError('PUT /api/patients/[id]', err);
@@ -39,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
         const patientId = Number(id);
@@ -47,6 +59,14 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
         await deletePatient(patientId);
+        audit({
+            actor: getActorFromRequest(request),
+            action: 'DELETE',
+            entity: 'patients',
+            entity_id: patientId,
+            route: 'DELETE /api/patients/[id]',
+            ip: getIpFromRequest(request),
+        });
         return NextResponse.json({ success: true });
     } catch (err) {
         logApiError('DELETE /api/patients/[id]', err);

@@ -35,10 +35,10 @@ describe('GET /api/patients', () => {
   });
 
   it('devuelve stats con ?stats=true', async () => {
-    vi.mocked(patientsData.getPatientStats).mockResolvedValue({ total: 5, activos: 3, nuevosMes: 2 });
+    vi.mocked(patientsData.getPatientStats).mockResolvedValue({ newThisMonth: 2, treatmentsDone: 5, pendingFollowups: 1 });
     const res = await GET(makeRequest('http://test/api/patients?stats=true'));
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ total: 5 });
+    expect(await res.json()).toMatchObject({ newThisMonth: 2 });
   });
 });
 

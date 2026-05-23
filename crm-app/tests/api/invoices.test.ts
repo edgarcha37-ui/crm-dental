@@ -25,10 +25,10 @@ describe('GET /api/invoices', () => {
   });
 
   it('stats=true devuelve estadísticas', async () => {
-    vi.mocked(invData.getInvoiceStats).mockResolvedValue({ pagadas: 5, pendientes: 2, totalMes: 1000 });
+    vi.mocked(invData.getInvoiceStats).mockResolvedValue({ monthlyIncome: 1000, pendingPayments: 200, totalInvoices: 5 });
     const res = await GET(makeRequest('http://test/api/invoices?stats=true'));
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ pagadas: 5 });
+    expect(await res.json()).toMatchObject({ totalInvoices: 5 });
   });
 
   it('paciente_id usa filtro por paciente', async () => {

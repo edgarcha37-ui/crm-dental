@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { getPatients, createPatient, getPatientById, searchPatients, getPatientStats } from '@/lib/data/patients';
 import { triggerN8n } from '@/lib/n8n';
 import { createPatientSchema, zodErrorResponse } from '@/schemas';
@@ -29,6 +30,16 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await createPatient(parsed.data);
+
+        audit({
+            actor: getActorFromRequest(request),
+            action: 'INSERT',
+            entity: 'patients',
+            entity_id: result.id,
+            diff: { after: parsed.data },
+            route: 'POST /api/patients',
+            ip: getIpFromRequest(request),
+        });
 
         // Dispara workflow de bienvenida en n8n (no-bloqueante: si falla no rompe el alta).
         const created = await getPatientById(result.id);
