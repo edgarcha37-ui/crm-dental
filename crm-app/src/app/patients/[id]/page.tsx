@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Receipt, StickyNote, Plus, ChevronRight, CheckCircle, X, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, Receipt, StickyNote, Plus, ChevronRight, CheckCircle, Activity } from 'lucide-react';
 import MedicalHistoryEditor from '@/components/MedicalHistoryEditor';
 import { usePatient } from '@/components/patients/usePatient';
 import { EmptyState } from '@/components/patients/utils';
@@ -10,6 +10,8 @@ import PatientHeader from './_components/PatientHeader';
 import TimelineTab, { TimelineItem } from './_components/TimelineTab';
 import FilesTab from './_components/FilesTab';
 import TreatmentPlansPanel from './_components/TreatmentPlansPanel';
+import PatientFinancialSummary from './_components/PatientFinancialSummary';
+import { NewTreatmentModal, AbonoModal, NewNoteModal, EditPatientModal } from './_components/PatientModals';
 import Odontograma from '@/components/Odontograma';
 import { useToast } from '@/components/Toast';
 
@@ -58,8 +60,6 @@ export default function PatientDetailPage() {
     const [savingTr, setSavingTr] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-    type CitaDetalle = (typeof appointments)[number];
-    const [citaDetalle, setCitaDetalle] = useState<CitaDetalle | null>(null);
     const [filterCita, setFilterCita] = useState('');
     const [dragging, setDragging] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -181,24 +181,13 @@ export default function PatientDetailPage() {
                 <MedicalHistoryEditor pacienteId={Number(id)} />
             </div>
 
-            {/* Resumen Financiero Dinámico */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-5 border border-gray-100">
-                    <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Total a Pagar</p>
-                    <p className="text-2xl font-bold text-[var(--color-text-primary)]">${costoTotal.toLocaleString('es-MX',{minimumFractionDigits:2})}</p>
-                </div>
-                <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-5 border border-gray-100">
-                    <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Total Abonado</p>
-                    <p className="text-2xl font-bold text-green-600">${totalAbonado.toLocaleString('es-MX',{minimumFractionDigits:2})}</p>
-                </div>
-                <div className={`rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-5 flex items-center justify-between border ${saldo>0?'bg-red-50 border-red-200':'bg-green-50 border-green-200'}`}>
-                    <div>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${saldo>0?'text-red-700':'text-green-700'}`}>Saldo Pendiente</p>
-                        <p className={`text-2xl font-bold ${saldo>0?'text-red-600':'text-green-600'}`}>${saldo.toLocaleString('es-MX',{minimumFractionDigits:2})}</p>
-                    </div>
-                    {treatments.length>0&&<button onClick={()=>setShowAbono(true)} className="text-xs font-bold px-4 py-2 bg-white rounded-lg text-blue-600 hover:bg-blue-50 border border-blue-200 shadow-sm transition-all">+ Abono</button>}
-                </div>
-            </div>
+            <PatientFinancialSummary
+                costoTotal={costoTotal}
+                totalAbonado={totalAbonado}
+                saldo={saldo}
+                showAbonoButton={treatments.length > 0}
+                onAbono={() => setShowAbono(true)}
+            />
 
             <TreatmentPlansPanel pacienteId={Number(id)} />
 
@@ -279,7 +268,7 @@ export default function PatientDetailPage() {
                                     return (
                                     <div key={apt.id} className="p-4 rounded-xl border border-[var(--color-border-light)] hover:shadow-sm transition-all bg-white">
                                         <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => setCitaDetalle(apt)}>
+                                            <div className="flex items-center gap-4 flex-1">
                                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                                                     <Calendar size={18} className="text-blue-500" />
                                                 </div>
@@ -291,7 +280,7 @@ export default function PatientDetailPage() {
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 {esFutura && (
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); enviarRecordatorio(apt.id); }}
+                                                        onClick={() => enviarRecordatorio(apt.id)}
                                                         className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-md bg-green-50 text-green-700 hover:bg-green-100 border border-green-100"
                                                         title="Enviar recordatorio WhatsApp ahora"
                                                     >
@@ -354,97 +343,44 @@ export default function PatientDetailPage() {
                 )}
             </div>
 
-            {/* Modales - Se mantienen igual pero con diseño limpio */}
-            {showNewTr&&(
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" onClick={()=>setShowNewTr(false)}>
-                    <div className="bg-white rounded-2xl p-8 w-[480px] shadow-2xl" onClick={e=>e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-bold">Agregar Tratamiento</h2><button onClick={()=>setShowNewTr(false)}><X size={20} className="text-gray-400"/></button></div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Clasificación</label>
-                                <select value={newTr.clasificacion} onChange={e=>setNewTr({...newTr,clasificacion:e.target.value,nombre:''})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20">
-                                    <option value="Básico">Básico</option>
-                                    <option value="Especialidad">Especialidad</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Tipo de Tratamiento</label>
-                                <select value={newTr.nombre} onChange={e=>setNewTr({...newTr,nombre:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20">
-                                    <option value="">Seleccionar...</option>
-                                    {listaTipos.map(o=><option key={o} value={o}>{o}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Precio ($)</label>
-                                <input type="number" value={newTr.precio} onChange={e=>setNewTr({...newTr,precio:e.target.value})} placeholder="0.00" className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"/>
-                            </div>
-                        </div>
-                        <div className="flex gap-3 mt-8">
-                            <button onClick={()=>setShowNewTr(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-secondary)] hover:bg-gray-50 transition-all">Cancelar</button>
-                            <button onClick={agregarTratamiento} disabled={savingTr||!newTr.nombre} className="flex-1 py-2.5 rounded-xl bg-[var(--color-accent-blue)] text-white text-sm font-bold hover:bg-blue-600 shadow-md disabled:opacity-50 transition-all">{savingTr?'Guardando...':'Guardar'}</button>
-                        </div>
-                    </div>
-                </div>
+            {showNewTr && (
+                <NewTreatmentModal
+                    form={newTr}
+                    setForm={setNewTr}
+                    listaTipos={listaTipos}
+                    saving={savingTr}
+                    onClose={() => setShowNewTr(false)}
+                    onSave={agregarTratamiento}
+                />
             )}
 
-            {showAbono&&treatments.length>0&&(
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" onClick={()=>setShowAbono(false)}>
-                    <div className="bg-white rounded-2xl p-8 w-[420px] shadow-2xl" onClick={e=>e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-bold">Registrar Pago</h2><button onClick={()=>setShowAbono(false)}><X size={20} className="text-gray-400"/></button></div>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-6">Saldo actual: <span className="font-bold text-red-500">${saldo.toLocaleString('es-MX',{minimumFractionDigits:2})}</span></p>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Monto a Abonar ($)</label>
-                                <input type="number" min="1" value={abonoForm.monto} onChange={e=>setAbonoForm({...abonoForm,monto:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20" placeholder="0.00" autoFocus/>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Concepto</label>
-                                <input type="text" value={abonoForm.concepto} onChange={e=>setAbonoForm({...abonoForm,concepto:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20" placeholder="Ej: Abono de brackets..."/>
-                            </div>
-                        </div>
-                        <div className="flex gap-3 mt-8">
-                            <button onClick={()=>setShowAbono(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-secondary)] hover:bg-gray-50 transition-all">Cancelar</button>
-                            <button onClick={registrarAbono} disabled={savingAbono||!abonoForm.monto||parseFloat(abonoForm.monto)<=0} className="flex-1 py-2.5 rounded-xl bg-green-500 text-white text-sm font-bold hover:bg-green-600 shadow-md disabled:opacity-50 transition-all">{savingAbono?'Procesando...':'Confirmar Pago'}</button>
-                        </div>
-                    </div>
-                </div>
+            {showAbono && treatments.length > 0 && (
+                <AbonoModal
+                    form={abonoForm}
+                    setForm={setAbonoForm}
+                    saldo={saldo}
+                    saving={savingAbono}
+                    onClose={() => setShowAbono(false)}
+                    onSave={registrarAbono}
+                />
             )}
 
-            {showNote&&(
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" onClick={()=>setShowNote(false)}>
-                    <div className="bg-white rounded-2xl p-8 w-[500px] shadow-2xl" onClick={e=>e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-bold">Nueva Nota Médica</h2><button onClick={()=>setShowNote(false)}><X size={20} className="text-gray-400"/></button></div>
-                        <div className="space-y-4">
-                            <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Motivo / Título</label><input type="text" value={noteForm.titulo} onChange={e=>setNoteForm({...noteForm,titulo:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20" placeholder="Ej: Control mensual..."/></div>
-                            <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Observaciones</label><textarea value={noteForm.contenido} onChange={e=>setNoteForm({...noteForm,contenido:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 h-32 resize-none" placeholder="Escribe aquí las notas clínicas..."/></div>
-                        </div>
-                        <div className="flex gap-3 mt-8">
-                            <button onClick={()=>setShowNote(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-secondary)] hover:bg-gray-50 transition-all">Cancelar</button>
-                            <button onClick={createNote} className="flex-1 py-2.5 rounded-xl bg-[var(--color-accent-blue)] text-white text-sm font-bold hover:bg-blue-600 shadow-md transition-all">Guardar Nota</button>
-                        </div>
-                    </div>
-                </div>
+            {showNote && (
+                <NewNoteModal
+                    form={noteForm}
+                    setForm={setNoteForm}
+                    onClose={() => setShowNote(false)}
+                    onSave={createNote}
+                />
             )}
 
-            {showEdit&&(
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" onClick={()=>setShowEdit(false)}>
-                    <div className="bg-white rounded-2xl p-8 w-[520px] shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-bold">Editar Perfil</h2><button onClick={()=>setShowEdit(false)}><X size={20} className="text-gray-400"/></button></div>
-                        <div className="space-y-4">
-                            <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Nombre Completo</label><input type="text" value={editForm.nombre} onChange={e=>setEditForm({...editForm,nombre:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"/></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Teléfono</label><input type="text" value={editForm.telefono} onChange={e=>setEditForm({...editForm,telefono:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"/></div>
-                                <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Correo</label><input type="email" value={editForm.correo} onChange={e=>setEditForm({...editForm,correo:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"/></div>
-                            </div>
-                            <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Dirección</label><input type="text" value={editForm.direccion} onChange={e=>setEditForm({...editForm,direccion:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"/></div>
-                            <div><label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5 uppercase tracking-wider">Alertas Médicas / Alergias</label><textarea value={editForm.notas_generales} onChange={e=>setEditForm({...editForm,notas_generales:e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-red-200 bg-red-50/30 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 h-24 resize-none" placeholder="Alergia a la penicilina, hipertensión..."/></div>
-                        </div>
-                        <div className="flex gap-3 mt-8">
-                            <button onClick={()=>setShowEdit(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-secondary)] hover:bg-gray-50 transition-all">Cancelar</button>
-                            <button onClick={savePatient} className="flex-1 py-2.5 rounded-xl bg-[var(--color-accent-blue)] text-white text-sm font-bold hover:bg-blue-600 shadow-md transition-all">Guardar Cambios</button>
-                        </div>
-                    </div>
-                </div>
+            {showEdit && (
+                <EditPatientModal
+                    form={editForm}
+                    setForm={setEditForm}
+                    onClose={() => setShowEdit(false)}
+                    onSave={savePatient}
+                />
             )}
         </div>
     );
