@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Receipt, StickyNote, Plus, ChevronRight, CheckCircle, Activity } from 'lucide-react';
 import MedicalHistoryEditor from '@/components/MedicalHistoryEditor';
@@ -28,6 +28,7 @@ const TABS: { key: TabKey; label: string }[] = [{ key: 'historial', label: 'Hist
 
 export default function PatientDetailPage() {
     const { id } = useParams<{ id: string }>();
+    const router = useRouter();
     const toast = useToast();
 
     async function enviarRecordatorio(appointmentId: number) {
@@ -72,6 +73,21 @@ export default function PatientDetailPage() {
         if (!confirm(patient?.archivado ? '¿Restaurar este paciente?' : '¿Archivar este paciente? Esto indica que no tiene tratamientos pendientes.')) return;
         await fetch(`/api/patients/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ archivado: !patient?.archivado }) });
         fetchAll();
+    }
+    async function eliminarPaciente() {
+        const confirmText = `¿Eliminar permanentemente a ${patient?.nombre}? Esta acción NO se puede deshacer y borrará también todas sus citas, tratamientos, notas, facturas y archivos. Si solo quieres marcarlo como inactivo, mejor usa "Archivar".`;
+        if (!confirm(confirmText)) return;
+        try {
+            const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || `Error ${res.status}`);
+            }
+            toast.success('Paciente eliminado');
+            router.push('/patients');
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'No se pudo eliminar el paciente');
+        }
     }
     async function createNote() {
         await fetch('/api/notes', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...noteForm, tipo:'nota', prioridad:'Media', completada:false, paciente_id:Number(id)}) });
@@ -174,6 +190,7 @@ export default function PatientDetailPage() {
                     setShowEdit(true);
                 }}
                 onArchivar={archivarPaciente}
+                onDelete={eliminarPaciente}
             />
 
             {/* Historia clínica estructurada */}

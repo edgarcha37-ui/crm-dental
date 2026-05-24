@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Calendar, Edit, MapPin, Phone, Tag, User } from 'lucide-react';
+import { AlertCircle, Calendar, Edit, MapPin, Phone, Tag, Trash2, User } from 'lucide-react';
 import { PatientShape } from '@/components/patients/usePatient';
 import { getInitials, calcAge } from '@/components/patients/utils';
 
@@ -8,9 +8,10 @@ interface Props {
   patient: PatientShape;
   onEdit: () => void;
   onArchivar: () => void;
+  onDelete: () => void;
 }
 
-export default function PatientHeader({ patient, onEdit, onArchivar }: Props) {
+export default function PatientHeader({ patient, onEdit, onArchivar, onDelete }: Props) {
   return (
     <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-6 mb-6">
       <div className="flex items-start gap-6">
@@ -43,6 +44,13 @@ export default function PatientHeader({ patient, onEdit, onArchivar }: Props) {
                   : 'border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200'
               }`}>
                 {patient.archivado ? '↩ Restaurar' : '📁 Archivar Paciente'}
+              </button>
+              <button
+                onClick={onDelete}
+                title="Eliminar paciente permanentemente"
+                className="flex items-center gap-2 px-4 py-2 text-sm border border-red-200 text-red-600 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all"
+              >
+                <Trash2 size={15} /> Eliminar
               </button>
             </div>
           </div>
