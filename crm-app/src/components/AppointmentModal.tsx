@@ -6,7 +6,7 @@ import PatientAutocomplete, { AutocompletePatient } from './PatientAutocomplete'
 import { useToast } from './Toast';
 
 interface Doctor {
-  id: number;
+  id: number | null;
   nombre: string;
   especialidad?: string | null;
 }
@@ -56,14 +56,23 @@ export default function AppointmentModal({ open, onClose, onCreated, initialFech
     setDuracion(30);
     setMotivo('');
     setError(null);
-    // Carga lista de doctores (silencioso si la tabla aún no existe).
-    fetch('/api/doctors')
-      .then(r => (r.ok ? r.json() : []))
-      .then((data: Doctor[]) => {
-        setDoctors(data);
-        if (data.length > 0) setDoctorId(data[0].id);
-      })
-      .catch(() => setDoctors([]));
+    // Carga doctores + perfil del titular en paralelo.
+    Promise.all([
+      fetch('/api/doctors').then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch('/api/settings').then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([doctorsData, settings]: [Doctor[], { perfil?: { nombre?: string; especialidad?: string } } | null]) => {
+      const titular: Doctor[] =
+        settings?.perfil?.nombre
+          ? [{ id: null, nombre: settings.perfil.nombre, especialidad: settings.perfil.especialidad || null }]
+          : [];
+      // Evitar duplicado si el titular ya existe en la tabla doctors con el mismo nombre.
+      const filtered = (doctorsData as Doctor[]).filter(
+        d => !titular.length || d.nombre.toLowerCase() !== titular[0].nombre.toLowerCase()
+      );
+      const merged = [...titular, ...filtered];
+      setDoctors(merged);
+      if (merged.length > 0) setDoctorId(merged[0].id);
+    });
   }, [open, initialFecha, initialHoraInicio]);
 
   if (!open) return null;
@@ -185,8 +194,8 @@ export default function AppointmentModal({ open, onClose, onCreated, initialFech
                 onChange={e => setDoctorId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-border)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20"
               >
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>{d.nombre}{d.especialidad ? ` — ${d.especialidad}` : ''}</option>
+                {doctors.map((d, i) => (
+                  <option key={d.id ?? `owner-${i}`} value={d.id ?? ''}>{d.nombre}{d.especialidad ? ` — ${d.especialidad}` : ''}</option>
                 ))}
               </select>
             </div>
