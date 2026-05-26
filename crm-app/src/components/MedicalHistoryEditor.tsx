@@ -71,17 +71,31 @@ export default function MedicalHistoryEditor({ pacienteId }: Props) {
   }
 
   async function save() {
+    // Auto-agregar cualquier texto pendiente en los inputs antes de guardar.
+    const pending = { ...newItem };
+    const extra: Partial<HistoryState> = {};
+    for (const key of ['alergias', 'medicamentos_cronicos', 'padecimientos'] as ListField[]) {
+      if (pending[key].trim()) {
+        extra[key] = [...history[key], pending[key].trim()];
+      }
+    }
+    const finalHistory = extra ? { ...history, ...extra } : history;
+    if (Object.keys(extra).length > 0) {
+      setHistory(finalHistory);
+      setNewItem(prev => ({ ...prev, ...Object.fromEntries(Object.keys(extra).map(k => [k, ''])) } as Record<ListField, string>));
+    }
+
     setSaveState('saving');
     try {
       const res = await fetch(`/api/patients/${pacienteId}/medical-history`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          alergias: history.alergias,
-          medicamentos_cronicos: history.medicamentos_cronicos,
-          padecimientos: history.padecimientos,
-          tipo_sangre: history.tipo_sangre || null,
-          notas_clinicas: history.notas_clinicas || null,
+          alergias: finalHistory.alergias,
+          medicamentos_cronicos: finalHistory.medicamentos_cronicos,
+          padecimientos: finalHistory.padecimientos,
+          tipo_sangre: finalHistory.tipo_sangre || null,
+          notas_clinicas: finalHistory.notas_clinicas || null,
         }),
       });
       if (!res.ok) throw new Error('save failed');

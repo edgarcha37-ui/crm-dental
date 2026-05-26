@@ -267,7 +267,7 @@ export default function PatientsClient({ initialPatients }: Props) {
                                 <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Fuente de Captación</label>
                                 <select value={formData.fuente_captacion} onChange={(e) => setFormData({ ...formData, fuente_captacion: e.target.value })}
                                     className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 focus:border-[var(--color-accent-blue)] bg-white">
-                                    {['Instagram', 'Facebook', 'Referido', 'Google', 'Otro'].map(opt => (
+                                    {['Instagram', 'Facebook', 'TikTok', 'Referido', 'Google', 'Otro'].map(opt => (
                                         <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>

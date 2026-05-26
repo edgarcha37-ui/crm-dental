@@ -20,8 +20,8 @@ const STATUS_COLORS: Record<string, string> = { 'Completado': 'bg-green-50 text-
 const BASICOS = ['Consulta / Valoración dental','Limpieza dental (profilaxis)','Resinas dentales','Extracciones simples','Radiografías dentales','Aplicación de flúor','Selladores dentales','Blanqueamiento dental','Urgencias dentales','Curaciones dentales','Ajuste o cementado de coronas/provisionales','Placas de descarga básicas','Control y revisión dental periódica'];
 const ESPECIALIDAD = ['Valoración ortodóntica','Diagnóstico ortodóntico','Radiografías y estudios ortodónticos','Colocación de brackets metálicos','Colocación de brackets estéticos','Colocación de brackets autoligado','Ortodoncia invisible (alineadores)','Ajustes ortodónticos mensuales','Cambio de ligas ortodónticas','Retiro de brackets','Colocación de retenedores fijos','Colocación de retenedores removibles','Expansión maxilar','Corrección de mordida','Tratamiento de apiñamiento dental','Tratamiento de diastemas','Ortodoncia interceptiva infantil','Mantenimiento ortodóntico','Reparación de brackets o alambres','Contención post-ortodoncia'];
 
-type TabKey = 'historial' | 'tratamientos' | 'citas' | 'odontograma' | 'facturas' | 'notas' | 'archivos';
-const TABS: { key: TabKey; label: string }[] = [{ key: 'historial', label: 'Historial' }, { key: 'tratamientos', label: 'Tratamientos' },{ key: 'citas', label: 'Citas' },{ key: 'odontograma', label: 'Odontograma' },{ key: 'facturas', label: 'Facturas' },{ key: 'notas', label: 'Notas Clínicas' },{ key: 'archivos', label: 'Archivos' }];
+type TabKey = 'tratamientos' | 'citas' | 'odontograma' | 'facturas' | 'notas' | 'archivos' | 'historia' | 'historial';
+const TABS: { key: TabKey; label: string }[] = [{ key: 'tratamientos', label: 'Tratamientos' },{ key: 'citas', label: 'Citas' },{ key: 'odontograma', label: 'Odontograma' },{ key: 'facturas', label: 'Facturas' },{ key: 'notas', label: 'Notas Clínicas' },{ key: 'archivos', label: 'Archivos' },{ key: 'historia', label: 'Historia Clínica' },{ key: 'historial', label: 'Historial' }];
 
 // NOTA: el data loading y los helpers ya están extraídos. Un siguiente paso
 // (Fase 4) puede sacar <PatientHeader>, <TimelineTab>, <FilesTab>, etc.
@@ -48,7 +48,7 @@ export default function PatientDetailPage() {
     } = usePatient(id);
     const fetchAll = refetch; // alias para no tocar todas las llamadas existentes
 
-    const [activeTab, setActiveTab] = useState<TabKey>('historial');
+    const [activeTab, setActiveTab] = useState<TabKey>('tratamientos');
     const [showEdit, setShowEdit] = useState(false);
     const [editForm, setEditForm] = useState({ nombre:'', telefono:'', correo:'', direccion:'', fuente_captacion:'', notas_generales:'' });
     const [showNote, setShowNote] = useState(false);
@@ -193,10 +193,6 @@ export default function PatientDetailPage() {
                 onDelete={eliminarPaciente}
             />
 
-            {/* Historia clínica estructurada */}
-            <div className="bg-white rounded-xl border border-[var(--color-border-light)] shadow-sm p-5 mb-6">
-                <MedicalHistoryEditor pacienteId={Number(id)} />
-            </div>
 
             <PatientFinancialSummary
                 costoTotal={costoTotal}
@@ -214,6 +210,8 @@ export default function PatientDetailPage() {
 
             <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] p-6 border border-[var(--color-border-light)] min-h-[400px]">
                 
+                {activeTab === 'historia' && <MedicalHistoryEditor pacienteId={Number(id)} />}
+
                 {activeTab === 'historial' && <TimelineTab items={timelineItems as TimelineItem[]} />}
 
                 {activeTab === 'odontograma' && <Odontograma pacienteId={Number(id)} />}

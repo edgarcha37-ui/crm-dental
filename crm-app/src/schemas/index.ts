@@ -55,7 +55,18 @@ export const createTreatmentSchema = z.object({
   notas: optionalText,
 });
 
-export const updateTreatmentSchema = createTreatmentSchema.partial();
+// Schema de update sin defaults: .partial() sobre createTreatmentSchema hereda .default(0)
+// de costo_total/monto_pagado, lo que inyectaría 0 aunque el campo no venga en el body.
+export const updateTreatmentSchema = z.object({
+  nombre_tratamiento: nonEmpty,
+  clasificacion: z.enum(TREATMENT_CLASIFICACION).nullish(),
+  estatus: z.enum(TREATMENT_ESTATUS),
+  costo_total: z.number().nonnegative(),
+  monto_pagado: z.number().nonnegative(),
+  fecha_inicio: isoDate.nullish(),
+  fecha_fin: isoDate.nullish(),
+  notas: optionalText,
+}).partial();
 
 // ============================================================
 // Appointment
