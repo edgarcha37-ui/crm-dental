@@ -21,8 +21,8 @@ const STATUS_COLORS: Record<string, string> = { 'Completado': 'bg-green-50 text-
 const BASICOS = ['Consulta / Valoración dental','Limpieza dental (profilaxis)','Resinas dentales','Extracciones simples','Radiografías dentales','Aplicación de flúor','Selladores dentales','Blanqueamiento dental','Urgencias dentales','Curaciones dentales','Ajuste o cementado de coronas/provisionales','Placas de descarga básicas','Control y revisión dental periódica'];
 const ESPECIALIDAD = ['Valoración ortodóntica','Diagnóstico ortodóntico','Radiografías y estudios ortodónticos','Colocación de brackets metálicos','Colocación de brackets estéticos','Colocación de brackets autoligado','Ortodoncia invisible (alineadores)','Ajustes ortodónticos mensuales','Cambio de ligas ortodónticas','Retiro de brackets','Colocación de retenedores fijos','Colocación de retenedores removibles','Expansión maxilar','Corrección de mordida','Tratamiento de apiñamiento dental','Tratamiento de diastemas','Ortodoncia interceptiva infantil','Mantenimiento ortodóntico','Reparación de brackets o alambres','Contención post-ortodoncia'];
 
-type TabKey = 'tratamientos' | 'citas' | 'odontograma' | 'facturas' | 'notas' | 'archivos' | 'historia' | 'historial';
-const TABS: { key: TabKey; label: string }[] = [{ key: 'tratamientos', label: 'Tratamientos' },{ key: 'citas', label: 'Citas' },{ key: 'odontograma', label: 'Odontograma' },{ key: 'facturas', label: 'Facturas' },{ key: 'notas', label: 'Notas Clínicas' },{ key: 'archivos', label: 'Archivos' },{ key: 'historia', label: 'Historia Clínica' },{ key: 'historial', label: 'Historial' }];
+type TabKey = 'tratamientos' | 'planes' | 'citas' | 'odontograma' | 'facturas' | 'notas' | 'archivos' | 'historia' | 'historial';
+const TABS: { key: TabKey; label: string }[] = [{ key: 'tratamientos', label: 'Tratamientos' },{ key: 'planes', label: 'Planes' },{ key: 'citas', label: 'Citas' },{ key: 'odontograma', label: 'Odontograma' },{ key: 'facturas', label: 'Facturas' },{ key: 'notas', label: 'Notas Clínicas' },{ key: 'archivos', label: 'Archivos' },{ key: 'historia', label: 'Historia Clínica' },{ key: 'historial', label: 'Historial' }];
 
 // NOTA: el data loading y los helpers ya están extraídos. Un siguiente paso
 // (Fase 4) puede sacar <PatientHeader>, <TimelineTab>, <FilesTab>, etc.
@@ -204,8 +204,6 @@ export default function PatientDetailPage() {
                 onAbono={() => setShowAbono(true)}
             />
 
-            <TreatmentPlansPanel pacienteId={Number(id)} pacienteNombre={patient.nombre} />
-
             <div className="flex items-center gap-1 mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-1.5 w-fit">
                 {TABS.map(({key,label})=><button key={key} onClick={()=>setActiveTab(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab===key?'bg-[var(--color-accent-blue)] text-white shadow-md':'text-[var(--color-text-secondary)] hover:bg-gray-50'}`}>{label}</button>)}
             </div>
@@ -256,6 +254,8 @@ export default function PatientDetailPage() {
                         )}
                     </>
                 )}
+
+                {activeTab==='planes'&&<TreatmentPlansPanel pacienteId={Number(id)} pacienteNombre={patient.nombre} />}
 
                 {activeTab==='citas'&&(()=>{
                     const APT_COLORS: Record<string,string> = {'Completada':'bg-green-50 text-green-700','Confirmada':'bg-blue-50 text-blue-700','Pendiente':'bg-yellow-50 text-yellow-700','Cancelada':'bg-red-50 text-red-700','No Asistió':'bg-gray-100 text-gray-600'};
