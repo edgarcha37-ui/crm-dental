@@ -51,6 +51,8 @@ export default function TreatmentPlansPanel({ pacienteId, pacienteNombre }: Prop
   const [form, setForm] = useState({ nombre: '', descripcion: '', fecha_estimada_fin: '' });
   const [saving, setSaving] = useState(false);
   const [quotePlan, setQuotePlan] = useState<Plan | null>(null);
+  const [newTrForm, setNewTrForm] = useState<Record<number, { nombre: string; costo: string }>>({});
+  const [addingTr, setAddingTr] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -150,6 +152,35 @@ export default function TreatmentPlansPanel({ pacienteId, pacienteNombre }: Prop
     } catch { toast.error('Error al quitar tratamiento'); }
   }
 
+  async function addTreatmentToPlan(planId: number) {
+    const f = newTrForm[planId];
+    if (!f?.nombre.trim()) return;
+    setAddingTr(planId);
+    try {
+      const createRes = await fetch('/api/treatments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paciente_id: pacienteId,
+          nombre_tratamiento: f.nombre.trim(),
+          costo_total: Number(f.costo) || 0,
+          monto_pagado: 0,
+          estatus: 'Pendiente',
+        }),
+      });
+      if (!createRes.ok) throw new Error();
+      const { id } = await createRes.json();
+      await fetch(`/api/treatments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: planId }),
+      });
+      setNewTrForm(prev => ({ ...prev, [planId]: { nombre: '', costo: '' } }));
+      await load();
+    } catch { toast.error('Error al agregar tratamiento'); }
+    finally { setAddingTr(null); }
+  }
+
   const planTreatments = (planId: number) => allTreatments.filter(t => t.plan_id === planId);
   const unassigned = allTreatments.filter(t => t.plan_id === null);
 
@@ -229,25 +260,23 @@ export default function TreatmentPlansPanel({ pacienteId, pacienteNombre }: Prop
                         <p className="text-xs text-[var(--color-text-muted)] italic">{p.descripcion}</p>
                       )}
 
-                      {/* Tratamientos del plan */}
-                      {pTreatments.length === 0 ? (
-                        <p className="text-xs text-[var(--color-text-muted)] text-center py-2">Sin tratamientos en este plan aún.</p>
-                      ) : (
+                      {/* Lista de tratamientos del plan */}
+                      {pTreatments.length > 0 && (
                         <div className="space-y-1.5">
                           {pTreatments.map(t => (
-                            <div key={t.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-[var(--color-border-light)]">
+                            <div key={t.id} className="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-[var(--color-border-light)]">
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{t.nombre}</p>
+                                <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{t.nombre}</p>
                                 <p className="text-[11px] text-[var(--color-text-muted)]">{t.estatus}</p>
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                {t.costo > 0 && <span className="text-xs font-bold text-[var(--color-text-primary)]">${t.costo.toLocaleString('es-MX')}</span>}
+                                {t.costo > 0 && <span className="text-sm font-bold text-[var(--color-text-primary)]">${t.costo.toLocaleString('es-MX')}</span>}
                                 <button
                                   onClick={() => unassignTreatment(t.id)}
                                   title="Quitar del plan"
-                                  className="p-1 text-gray-400 hover:text-orange-600 rounded hover:bg-orange-50"
+                                  className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50"
                                 >
-                                  <Link2Off size={13} />
+                                  <X size={13} />
                                 </button>
                               </div>
                             </div>
@@ -255,30 +284,51 @@ export default function TreatmentPlansPanel({ pacienteId, pacienteNombre }: Prop
                         </div>
                       )}
 
-                      {/* Tratamientos no asignados para agregar */}
+                      {/* Formulario inline para agregar tratamiento nuevo */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="text"
+                          placeholder="Nombre del tratamiento (ej. Extracción, Resina...)"
+                          value={newTrForm[p.id]?.nombre ?? ''}
+                          onChange={e => setNewTrForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], nombre: e.target.value, costo: prev[p.id]?.costo ?? '' } }))}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTreatmentToPlan(p.id); } }}
+                          className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 bg-white"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Costo $"
+                          value={newTrForm[p.id]?.costo ?? ''}
+                          onChange={e => setNewTrForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], costo: e.target.value, nombre: prev[p.id]?.nombre ?? '' } }))}
+                          className="w-28 px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 bg-white"
+                        />
+                        <button
+                          onClick={() => addTreatmentToPlan(p.id)}
+                          disabled={!newTrForm[p.id]?.nombre.trim() || addingTr === p.id}
+                          className="flex items-center gap-1 px-3 py-2 text-sm font-medium bg-[var(--color-accent-blue)] text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 shadow-sm"
+                        >
+                          <Plus size={14} />
+                          {addingTr === p.id ? 'Agregando...' : 'Agregar'}
+                        </button>
+                      </div>
+
+                      {/* Tratamientos sueltos existentes que se pueden vincular */}
                       {unassigned.length > 0 && (
-                        <div>
-                          <p className="text-[11px] font-semibold text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wide">Agregar al plan</p>
-                          <div className="space-y-1">
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] select-none">
+                            Vincular tratamiento existente ({unassigned.length})
+                          </summary>
+                          <div className="mt-2 space-y-1">
                             {unassigned.map(t => (
                               <div key={t.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-dashed border-gray-200">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{t.nombre}</p>
-                                </div>
+                                <p className="text-xs text-[var(--color-text-secondary)] truncate flex-1">{t.nombre}</p>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   {t.costo > 0 && <span className="text-xs text-[var(--color-text-muted)]">${t.costo.toLocaleString('es-MX')}</span>}
-                                  <button
-                                    onClick={() => assignTreatment(t.id, p.id)}
-                                    title="Agregar al plan"
-                                    className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50"
-                                  >
-                                    <Link2 size={13} />
-                                  </button>
+                                  <button onClick={() => assignTreatment(t.id, p.id)} className="text-blue-500 hover:text-blue-700 text-[11px] font-medium">Vincular</button>
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </div>
+                        </details>
                       )}
                     </div>
                   )}
