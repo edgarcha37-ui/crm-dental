@@ -204,7 +204,7 @@ export default function PatientDetailPage() {
                 onAbono={() => setShowAbono(true)}
             />
 
-            <TreatmentPlansPanel pacienteId={Number(id)} />
+            <TreatmentPlansPanel pacienteId={Number(id)} pacienteNombre={patient.nombre} />
 
             <div className="flex items-center gap-1 mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-1.5 w-fit">
                 {TABS.map(({key,label})=><button key={key} onClick={()=>setActiveTab(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab===key?'bg-[var(--color-accent-blue)] text-white shadow-md':'text-[var(--color-text-secondary)] hover:bg-gray-50'}`}>{label}</button>)}

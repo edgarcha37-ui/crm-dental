@@ -9,6 +9,7 @@ export interface Treatment {
   costo_total: number;
   costo?: number;          // alias devuelto por getTreatmentsByPatient
   monto_pagado: number;
+  plan_id?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -17,7 +18,7 @@ export async function getTreatmentsByPatient(pacienteId: number) {
   const db = getSupabaseAdmin();
   const { data, error } = await db
     .from('treatments')
-    .select('id, paciente_id, nombre:nombre_tratamiento, estatus, costo:costo_total, monto_pagado, created_at, updated_at')
+    .select('id, paciente_id, nombre:nombre_tratamiento, estatus, costo:costo_total, monto_pagado, plan_id, created_at, updated_at')
     .eq('paciente_id', pacienteId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -44,6 +45,7 @@ export async function updateTreatment(id: number, data: Partial<Treatment>) {
   if (data.estatus !== undefined) update.estatus = data.estatus;
   if (data.costo_total !== undefined) update.costo_total = data.costo_total;
   if (data.monto_pagado !== undefined) update.monto_pagado = data.monto_pagado;
+  if ('plan_id' in data) update.plan_id = data.plan_id ?? null;
   if (Object.keys(update).length === 0) return;
   const { error } = await db.from('treatments').update(update).eq('id', id);
   if (error) throw error;

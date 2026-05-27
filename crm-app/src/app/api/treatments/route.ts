@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
-import { createTreatment } from '@/lib/data/treatments';
+import { createTreatment, getTreatmentsByPatient } from '@/lib/data/treatments';
 import { createTreatmentSchema, zodErrorResponse } from '@/schemas';
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const pacienteId = Number(searchParams.get('paciente_id'));
+  if (!pacienteId) return NextResponse.json({ error: 'paciente_id requerido' }, { status: 400 });
+  try {
+    return NextResponse.json(await getTreatmentsByPatient(pacienteId));
+  } catch (e) {
+    logApiError('GET /api/treatments', e);
+    return NextResponse.json({ error: 'Error al obtener tratamientos' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
     try {

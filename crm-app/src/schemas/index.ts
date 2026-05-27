@@ -66,6 +66,7 @@ export const updateTreatmentSchema = z.object({
   fecha_inicio: isoDate.nullish(),
   fecha_fin: isoDate.nullish(),
   notas: optionalText,
+  plan_id: z.number().int().positive().nullable(),
 }).partial();
 
 // ============================================================
