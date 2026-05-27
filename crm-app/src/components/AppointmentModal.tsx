@@ -18,6 +18,8 @@ interface Props {
   /** Valores iniciales si se abre desde un slot del calendario. */
   initialFecha?: string;       // YYYY-MM-DD
   initialHoraInicio?: string;  // HH:MM
+  /** Paciente pre-seleccionado (al abrir desde el expediente). */
+  initialPaciente?: AutocompletePatient | null;
 }
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90];
@@ -35,7 +37,7 @@ function todayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function AppointmentModal({ open, onClose, onCreated, initialFecha, initialHoraInicio }: Props) {
+export default function AppointmentModal({ open, onClose, onCreated, initialFecha, initialHoraInicio, initialPaciente }: Props) {
   const toast = useToast();
   const [paciente, setPaciente] = useState<AutocompletePatient | null>(null);
   const [fecha, setFecha] = useState(initialFecha || todayISO());
@@ -50,7 +52,7 @@ export default function AppointmentModal({ open, onClose, onCreated, initialFech
   useEffect(() => {
     if (!open) return;
     // Reset state cada vez que se abre.
-    setPaciente(null);
+    setPaciente(initialPaciente ?? null);
     setFecha(initialFecha || todayISO());
     setHoraInicio(initialHoraInicio || '09:00');
     setDuracion(30);

@@ -13,6 +13,7 @@ import TreatmentPlansPanel from './_components/TreatmentPlansPanel';
 import PatientFinancialSummary from './_components/PatientFinancialSummary';
 import { NewTreatmentModal, AbonoModal, NewNoteModal, EditPatientModal } from './_components/PatientModals';
 import Odontograma from '@/components/Odontograma';
+import AppointmentModal from '@/components/AppointmentModal';
 import { useToast } from '@/components/Toast';
 
 const STATUS_COLORS: Record<string, string> = { 'Completado': 'bg-green-50 text-green-600', 'En Progreso': 'bg-yellow-50 text-yellow-700', 'Pendiente': 'bg-blue-50 text-blue-600', 'Suspendido': 'bg-orange-50 text-orange-600', 'Cancelado': 'bg-red-50 text-red-600' };
@@ -53,6 +54,7 @@ export default function PatientDetailPage() {
     const [editForm, setEditForm] = useState({ nombre:'', telefono:'', correo:'', direccion:'', fuente_captacion:'', notas_generales:'' });
     const [showNote, setShowNote] = useState(false);
     const [noteForm, setNoteForm] = useState({ titulo:'', contenido:'' });
+    const [showNewAppointment, setShowNewAppointment] = useState(false);
     const [showAbono, setShowAbono] = useState(false);
     const [abonoForm, setAbonoForm] = useState({ monto:'', concepto:'' });
     const [savingAbono, setSavingAbono] = useState(false);
@@ -269,9 +271,9 @@ export default function PatientDetailPage() {
                                     <option value="">Todas las citas</option>
                                     {['Confirmada','Pendiente','Completada','Cancelada','No Asistió'].map(s=><option key={s} value={s}>{s}</option>)}
                                 </select>
-                                <Link href={`/appointments/new?paciente_id=${id}`} className="flex items-center gap-1 text-xs bg-[var(--color-accent-blue)] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 shadow-sm">
+                                <button onClick={() => setShowNewAppointment(true)} className="flex items-center gap-1 text-xs bg-[var(--color-accent-blue)] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 shadow-sm">
                                     <Plus size={12}/> Agendar
-                                </Link>
+                                </button>
                             </div>
                         </div>
                         {filtered.length===0?<EmptyState icon={<Calendar size={32} className="text-gray-300"/>} text="Sin citas registradas"/>:(
@@ -395,6 +397,14 @@ export default function PatientDetailPage() {
                     setForm={setEditForm}
                     onClose={() => setShowEdit(false)}
                     onSave={savePatient}
+                />
+            )}
+            {showNewAppointment && patient && (
+                <AppointmentModal
+                    open={showNewAppointment}
+                    onClose={() => setShowNewAppointment(false)}
+                    onCreated={() => { setShowNewAppointment(false); fetchAll(); }}
+                    initialPaciente={{ id: patient.id, nombre: patient.nombre }}
                 />
             )}
         </div>
