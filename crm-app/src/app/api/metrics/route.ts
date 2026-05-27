@@ -23,24 +23,22 @@ export async function GET(request: NextRequest) {
         return m;
     });
 
-    // Generar Smart Insight si la continuidad baja del 60%
+    // Generar Smart Insight si la continuidad baja del 60% — máximo 1 por semana
     if (liveMetrics.tasa_seguimiento < 60) {
         try {
             const { getInsights } = await import('@/lib/data/insights');
             const allInsights = await getInsights();
-            
-            const today = new Date().toISOString().split('T')[0];
-            const alreadyExists = allInsights.some(insight => 
-                insight.titulo === 'Baja Tasa de Seguimiento' && 
-                insight.fecha.startsWith(today)
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const alreadyExists = allInsights.some(insight =>
+                insight.titulo === 'Baja Tasa de Seguimiento' &&
+                insight.fecha >= oneWeekAgo
             );
-
             if (!alreadyExists) {
                 await insertInsight({
                     categoria: 'Operaciones',
                     titulo: 'Baja Tasa de Seguimiento',
-                    contenido: `Detectamos que muchos pacientes están terminando sus citas sin agendar la siguiente. Tasa actual: ${liveMetrics.tasa_seguimiento}%.`,
-                    accion_sugerida: 'Sugerimos revisar el proceso de salida en recepción. Implementar un guion de reagendamiento antes de procesar el pago.',
+                    contenido: `Muchos pacientes terminan sus citas sin agendar la siguiente. Tasa actual: ${liveMetrics.tasa_seguimiento}%.`,
+                    accion_sugerida: 'Revisar el proceso de salida en recepción. Implementar un guion de reagendamiento antes de procesar el pago.',
                     visto: false,
                     fecha: new Date().toISOString(),
                 });

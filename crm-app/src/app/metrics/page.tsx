@@ -15,15 +15,17 @@ export default async function MetricsPage() {
     getPatientsAtRisk(),
   ]);
 
-  // Mismo merge que /api/metrics: sobrescribe estáticas con live cuando aplique.
-  const merged = staticMetrics.map(m => {
-    if (m.metric_key === 'ingresos_totales') return { ...m, metric_value: liveMetrics.ingresos_totales };
-    if (m.metric_key === 'ingresos_totales_anterior') return { ...m, metric_value: liveMetrics.ingresos_totales_anterior };
-    if (m.metric_key === 'pacientes_nuevos') return { ...m, metric_value: liveMetrics.pacientes_nuevos };
-    if (m.metric_key === 'pacientes_nuevos_anterior') return { ...m, metric_value: liveMetrics.pacientes_nuevos_anterior };
-    if (m.metric_key === 'tasa_retencion') return { ...m, metric_value: liveMetrics.tasa_seguimiento, metric_label: 'Continuidad Clínica' };
-    return m;
-  });
+  // Merge live values into static records (or inject new records if placeholders are missing)
+  const LIVE_KEYS = new Set(['ingresos_totales','ingresos_totales_anterior','pacientes_nuevos','pacientes_nuevos_anterior','tasa_retencion']);
+  const merged = staticMetrics
+    .filter(m => !LIVE_KEYS.has(m.metric_key))
+    .concat([
+      { id: -1, metric_key: 'ingresos_totales',          metric_value: liveMetrics.ingresos_totales,          metric_label: 'Ingresos Totales',       periodo: '', rango: '', created_at: '' },
+      { id: -2, metric_key: 'ingresos_totales_anterior',  metric_value: liveMetrics.ingresos_totales_anterior,  metric_label: 'Ingresos Mes Anterior',   periodo: '', rango: '', created_at: '' },
+      { id: -3, metric_key: 'pacientes_nuevos',           metric_value: liveMetrics.pacientes_nuevos,           metric_label: 'Pacientes Nuevos',        periodo: '', rango: '', created_at: '' },
+      { id: -4, metric_key: 'pacientes_nuevos_anterior',  metric_value: liveMetrics.pacientes_nuevos_anterior,  metric_label: 'Pacientes Mes Anterior',  periodo: '', rango: '', created_at: '' },
+      { id: -5, metric_key: 'tasa_retencion',             metric_value: liveMetrics.tasa_seguimiento,           metric_label: 'Continuidad Clínica',     periodo: '', rango: '', created_at: '' },
+    ]);
 
   return (
     <MetricsClient
