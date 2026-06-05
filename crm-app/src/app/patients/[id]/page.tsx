@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Receipt, StickyNote, Plus, ChevronRight, CheckCircle, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, Receipt, StickyNote, Plus, ChevronRight, CheckCircle } from 'lucide-react';
 import MedicalHistoryEditor from '@/components/MedicalHistoryEditor';
 import { usePatient } from '@/components/patients/usePatient';
 import { EmptyState } from '@/components/patients/utils';
@@ -64,7 +64,6 @@ export default function PatientDetailPage() {
     const [uploadingFile, setUploadingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
     const [filterCita, setFilterCita] = useState('');
-    const [dragging, setDragging] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     async function savePatient() {

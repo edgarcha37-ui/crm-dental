@@ -45,7 +45,6 @@ function getMonthDates(date: Date): Date[] {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     // Empezar desde el lunes de la semana del primer día
     const startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
     const start = new Date(firstDay);

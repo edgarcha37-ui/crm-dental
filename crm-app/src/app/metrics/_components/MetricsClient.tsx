@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Bell, TrendingUp, TrendingDown, Users, CalendarDays, DollarSign, Activity, AlertCircle, Lightbulb, PieChart as PieChartIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, DollarSign, Activity, AlertCircle, Lightbulb, PieChart as PieChartIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from 'recharts';
 
 interface Metric {
@@ -87,7 +87,7 @@ export default function MetricsClient({ initialMetrics, initialInsights, initial
             name: m.metric_label,
             revenue: m.metric_value,
         }));
-    }, [metrics, dateFilter, monthsCount]);
+    }, [metrics, monthsCount]);
 
     const growthTrend = useMemo(() => {
         const raw = metrics.filter(m => m.metric_key === 'growth_trend');
@@ -95,7 +95,7 @@ export default function MetricsClient({ initialMetrics, initialInsights, initial
             name: m.metric_label,
             patients: m.metric_value,
         }));
-    }, [metrics, dateFilter, monthsCount]);
+    }, [metrics, monthsCount]);
 
     const channelsData = useMemo(() => {
         return metrics.filter(m => m.metric_key === 'canal_adquisicion').map(m => ({

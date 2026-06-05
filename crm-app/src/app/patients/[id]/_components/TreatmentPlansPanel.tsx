@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, X, ListTree, ChevronDown, ChevronRight, Printer, Link2, Link2Off } from 'lucide-react';
+import { Plus, X, ListTree, ChevronDown, ChevronRight, Printer } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 
 type EstadoPlan = 'Planeado' | 'En Progreso' | 'Completado' | 'Cancelado' | 'Suspendido';

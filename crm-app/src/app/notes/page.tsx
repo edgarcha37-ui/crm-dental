@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Plus, Clock, AlertTriangle, CheckCircle, Circle, Archive, Package, Wrench, FlaskConical, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, Plus, Clock, AlertTriangle, CheckCircle, Circle, Archive, Package, Wrench, FlaskConical, Calendar as CalendarIcon, type LucideIcon } from 'lucide-react';
 import LabWorksPanel from '@/components/LabWorksPanel';
 import { NotaOperativaCategoria, NotePrioridad } from '@/types';
 
@@ -15,7 +15,7 @@ interface NotaOperativa {
     fecha_vencimiento: string | null;
 }
 
-const CAT_ICONS: Record<string, any> = {
+const CAT_ICONS: Record<string, LucideIcon> = {
     'Suministros': Package,
     'Mantenimiento': Wrench,
     'Laboratorio': FlaskConical
@@ -27,7 +27,7 @@ const CAT_COLORS: Record<string, string> = {
     'Laboratorio': 'bg-purple-100 text-purple-700'
 };
 
-const PRIORITY_STYLES: Record<string, { badge: string; card: string; icon: any }> = {
+const PRIORITY_STYLES: Record<string, { badge: string; card: string; icon: LucideIcon }> = {
     'Alta': { badge: 'bg-red-100 text-red-700', card: 'border-l-4 border-l-red-500 bg-red-50/30', icon: AlertTriangle },
     'Media': { badge: 'bg-yellow-100 text-yellow-700', card: 'border border-[var(--color-border-light)]', icon: Clock },
     'Baja': { badge: 'bg-gray-100 text-gray-700', card: 'border border-[var(--color-border-light)]', icon: Circle }

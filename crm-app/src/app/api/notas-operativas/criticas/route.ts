@@ -23,7 +23,8 @@ export async function GET() {
             count: data.length,
             notas: data
         });
-    } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error desconocido';
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }
