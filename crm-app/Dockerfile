@@ -31,6 +31,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Zona horaria de la clínica. Sin esto, alpine corre en UTC y los cálculos
+# server-side de "hoy"/bordes de mes (citas, abonos, facturas, métricas)
+# se desfasan un día por la tarde/noche en México (UTC-6).
+RUN apk add --no-cache tzdata
+ENV TZ=America/Mexico_City
+
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
