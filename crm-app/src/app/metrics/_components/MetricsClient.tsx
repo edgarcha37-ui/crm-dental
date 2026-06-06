@@ -147,8 +147,8 @@ export default function MetricsClient({ initialMetrics, initialInsights, initial
                         <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Smart Insights</h2>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        {insights.map(insight => (
-                            <div key={insight.id} className={`bg-white rounded-[var(--radius-card)] p-5 shadow-[var(--shadow-card)] border-l-4 ${insight.categoria === 'Marketing' ? 'border-[var(--color-accent-purple)]' : insight.categoria === 'Retención' ? 'border-[var(--color-accent-red)]' : 'border-[var(--color-accent-blue)]'}`}>
+                        {[...insights].sort((a, b) => Number(a.visto) - Number(b.visto)).map(insight => (
+                            <div key={insight.id} className={`bg-white rounded-[var(--radius-card)] p-5 shadow-[var(--shadow-card)] border-l-4 transition-opacity ${insight.visto ? 'opacity-60' : ''} ${insight.categoria === 'Marketing' ? 'border-[var(--color-accent-purple)]' : insight.categoria === 'Retención' ? 'border-[var(--color-accent-red)]' : 'border-[var(--color-accent-blue)]'}`}>
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-2">
                                         <span className={`text-xs font-semibold px-2 py-1 rounded-md ${insight.categoria === 'Marketing' ? 'bg-purple-50 text-purple-700' : insight.categoria === 'Retención' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
