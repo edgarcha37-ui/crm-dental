@@ -2,13 +2,14 @@ import { getAppointments } from '@/lib/data/appointments';
 import { getAllMetrics, getLiveMetrics } from '@/lib/data/metrics';
 import { getActiveLabWorks } from '@/lib/data/lab-works';
 import DashboardClient, { DashboardAppointment, DashboardLabWork, DashboardStats } from './_components/DashboardClient';
+import { todayDateOnly } from '@/lib/dates';
 
 // Server Component: el primer paint trae datos reales sin "Cargando..." flash.
 // Al crear cita, el modal client llama router.refresh() y este re-corre.
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayDateOnly();
 
   // Paralelo: agenda de hoy + métricas live + lab works activos.
   // getLiveMetrics está cacheada 5 min (TTL en lib/data/metrics.ts) — barata.

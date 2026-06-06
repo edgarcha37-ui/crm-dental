@@ -186,8 +186,12 @@ export default function MetricsClient({ initialMetrics, initialInsights, initial
                             <DollarSign size={22} className="text-[var(--color-accent-blue)]" />
                         </div>
                         <div className="flex items-center gap-1">
-                            <TrendingUp size={14} className="text-[var(--color-accent-green)]" />
-                            <span className="text-xs font-medium text-[var(--color-accent-green)]">{revenueChange}%</span>
+                            {Number(revenueChange) < 0 ? (
+                                <TrendingDown size={14} className="text-[var(--color-accent-red)]" />
+                            ) : (
+                                <TrendingUp size={14} className="text-[var(--color-accent-green)]" />
+                            )}
+                            <span className={`text-xs font-medium ${Number(revenueChange) < 0 ? 'text-[var(--color-accent-red)]' : 'text-[var(--color-accent-green)]'}`}>{revenueChange}%</span>
                         </div>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)]">Ingresos Totales (Mes)</p>
@@ -216,10 +220,6 @@ export default function MetricsClient({ initialMetrics, initialInsights, initial
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center">
                             <Activity size={22} className="text-[var(--color-accent-green)]" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <TrendingDown size={14} className="text-[var(--color-accent-red)]" />
-                            <span className="text-xs font-medium text-[var(--color-accent-red)]">-8.4%</span>
                         </div>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)]">Continuidad Clínica</p>

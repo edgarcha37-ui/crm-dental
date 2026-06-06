@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Plus, TrendingUp, DollarSign, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import PatientAutocomplete, { AutocompletePatient } from '@/components/PatientAutocomplete';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
+import { toDateOnly } from '@/lib/dates';
 
 interface Invoice {
     id: number;
@@ -89,7 +90,7 @@ export default function BillingClient({ initialInvoices, initialStats }: Props) 
                     paciente_id: selectedPatient.id,
                     tratamiento_id: formData.tratamiento_id ? Number(formData.tratamiento_id) : null,
                     monto: Number(formData.monto),
-                    fecha: new Date().toISOString().split('T')[0],
+                    fecha: toDateOnly(new Date()),
                 }),
             });
             if (!res.ok) {
@@ -129,7 +130,7 @@ export default function BillingClient({ initialInvoices, initialStats }: Props) 
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const stamp = new Date().toISOString().split('T')[0];
+            const stamp = toDateOnly(new Date());
             link.download = `facturas-${stamp}.csv`;
             link.click();
             URL.revokeObjectURL(url);

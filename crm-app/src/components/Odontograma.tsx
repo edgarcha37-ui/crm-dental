@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Check } from 'lucide-react';
 import { useToast } from './Toast';
+import { toDateOnly } from '@/lib/dates';
 
 type ToothEstado = 'sano' | 'caries' | 'restauracion' | 'extraccion' | 'corona' | 'implante' | 'endodoncia' | 'ausente';
 
@@ -68,7 +69,7 @@ export default function Odontograma({ pacienteId }: Props) {
   function setToothEstado(fdi: string, estado: ToothEstado) {
     setDientes(prev => ({
       ...prev,
-      [fdi]: { ...prev[fdi], estado, fecha: new Date().toISOString().split('T')[0] },
+      [fdi]: { ...prev[fdi], estado, fecha: toDateOnly(new Date()) },
     }));
   }
 

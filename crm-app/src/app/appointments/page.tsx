@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import AppointmentModal from '@/components/AppointmentModal';
+import { toDateOnly } from '@/lib/dates';
 
 interface Appointment {
     id: number;
@@ -65,7 +66,9 @@ function getAppointmentPosition(apt: Appointment) {
     return { top: `${top}px`, height: `${Math.max(height, 28)}px` };
 }
 
-function dateStr(d: Date) { return d.toISOString().split('T')[0]; }
+// Fecha local 'YYYY-MM-DD'. NO usar toISOString (convierte a UTC y desfasa
+// el día en zonas con offset negativo como México por la tarde/noche).
+function dateStr(d: Date) { return toDateOnly(d); }
 
 export default function AppointmentsPage() {
     const [appointments, setAppointments] = useState<Appointment[]>([]);

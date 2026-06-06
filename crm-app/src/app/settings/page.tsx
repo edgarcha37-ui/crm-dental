@@ -94,6 +94,11 @@ export default function SettingsPage() {
     const setSaveState = (section: string, s: SaveState) =>
         setSaveStates(prev => ({ ...prev, [section]: s }));
 
+    // URL base real del CRM para la documentación de endpoints n8n.
+    // Se resuelve en cliente para mostrar el dominio de producción en vez de localhost.
+    const [crmBaseUrl, setCrmBaseUrl] = useState('');
+    useEffect(() => { setCrmBaseUrl(window.location.origin); }, []);
+
     // Carga inicial desde el backend.
     useEffect(() => {
         async function load() {
@@ -420,9 +425,9 @@ export default function SettingsPage() {
                             <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 mb-6">
                                 <p className="text-sm font-semibold text-[var(--color-accent-blue)] mb-1">URL Base del CRM</p>
                                 <code className="text-xs font-mono text-[var(--color-text-primary)] bg-white px-3 py-1.5 rounded-lg border border-blue-100 block">
-                                    http://localhost:3000
+                                    {crmBaseUrl || 'http://localhost:3000'}
                                 </code>
-                                <p className="text-xs text-[var(--color-text-muted)] mt-2">Al desplegar en producción, reemplaza con tu dominio real.</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-2">Esta es la URL base para los webhooks y llamadas desde n8n.</p>
                             </div>
 
                             <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Endpoints Disponibles</h3>
@@ -441,10 +446,10 @@ export default function SettingsPage() {
                             <div className="mt-8 p-5 bg-slate-800 rounded-2xl text-sm font-mono">
                                 <p className="text-blue-300 text-xs mb-3">{`// Ejemplo: leer pacientes desde n8n (HTTP Request node)`}</p>
                                 <p className="text-green-300">Method: <span className="text-white">GET</span></p>
-                                <p className="text-green-300">URL: <span className="text-white">http://localhost:3000/api/patients</span></p>
+                                <p className="text-green-300">URL: <span className="text-white">{crmBaseUrl || 'http://localhost:3000'}/api/patients</span></p>
                                 <p className="text-green-300 mt-2">{`// Ejemplo: registrar nueva cita`}</p>
                                 <p className="text-green-300">Method: <span className="text-white">POST</span></p>
-                                <p className="text-green-300">URL: <span className="text-white">http://localhost:3000/api/appointments</span></p>
+                                <p className="text-green-300">URL: <span className="text-white">{crmBaseUrl || 'http://localhost:3000'}/api/appointments</span></p>
                                 <p className="text-green-300">Body: <span className="text-yellow-200">{`{ "paciente_id": 1, "fecha": "2026-03-20", "hora_inicio": "10:00", ... }`}</span></p>
                             </div>
                         </div>
