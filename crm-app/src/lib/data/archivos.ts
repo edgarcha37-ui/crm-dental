@@ -75,7 +75,7 @@ export async function deleteArchivo(id: number) {
   if (error) throw error;
 }
 
-export async function getPresignedUploadUrl(pacienteId: number, fileName: string, _contentType: string) {
+export async function getPresignedUploadUrl(pacienteId: number, fileName: string) {
   await ensureBucket();
   const db = getSupabaseAdmin();
   const ext = fileName.split('.').pop();

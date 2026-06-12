@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../supabase';
+import { todayDateOnly } from '../dates';
 
 export interface Appointment {
   id: number;
@@ -90,7 +91,9 @@ export async function updateAppointment(id: number, data: Partial<Appointment>) 
 
 export async function getTodayAppointmentCount() {
   const db = getSupabaseAdmin();
-  const today = new Date().toISOString().split('T')[0];
+  // Hora local del server (CDMX), no UTC: con toISOString, después de las 18:00
+  // las "citas de hoy" eran las de mañana.
+  const today = todayDateOnly();
   const { count, error } = await db.from('appointments').select('id', { count: 'exact', head: true }).eq('fecha', today);
   if (error) throw error;
   return count ?? 0;

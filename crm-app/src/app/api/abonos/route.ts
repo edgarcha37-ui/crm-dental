@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { createAbonoSchema, zodErrorResponse } from '@/schemas';
+import { todayDateOnly } from '@/lib/dates';
 
 /**
  * POST /api/abonos
@@ -33,7 +34,8 @@ export async function POST(request: NextRequest) {
 
         const nuevoMontoPagado = (treatment.monto_pagado || 0) + monto;
         const nuevoEstatus = nuevoMontoPagado >= treatment.costo_total ? 'Completado' : treatment.estatus;
-        const today = new Date().toISOString().split('T')[0];
+        // todayDateOnly usa hora local (TZ del server = CDMX); toISOString daría la fecha UTC.
+        const today = todayDateOnly();
         const conceptoTexto = concepto || 'Abono a tratamiento';
 
         const { error: updateErr } = await db

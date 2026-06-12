@@ -49,10 +49,15 @@ export default function AppointmentModal({ open, onClose, onCreated, initialFech
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Deps primitivas: el padre suele pasar initialPaciente como objeto inline,
+  // que cambia de referencia en cada render y resetearía el form a mitad de captura.
+  const initialPacienteId = initialPaciente?.id ?? null;
+  const initialPacienteNombre = initialPaciente?.nombre ?? '';
+
   useEffect(() => {
     if (!open) return;
     // Reset state cada vez que se abre.
-    setPaciente(initialPaciente ?? null);
+    setPaciente(initialPacienteId != null ? { id: initialPacienteId, nombre: initialPacienteNombre } : null);
     setFecha(initialFecha || todayISO());
     setHoraInicio(initialHoraInicio || '09:00');
     setDuracion(30);
@@ -75,7 +80,7 @@ export default function AppointmentModal({ open, onClose, onCreated, initialFech
       setDoctors(merged);
       if (merged.length > 0) setDoctorId(merged[0].id);
     });
-  }, [open, initialFecha, initialHoraInicio]);
+  }, [open, initialFecha, initialHoraInicio, initialPacienteId, initialPacienteNombre]);
 
   if (!open) return null;
 

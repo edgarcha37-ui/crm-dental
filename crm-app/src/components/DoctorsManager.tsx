@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, Check, X, Power } from 'lucide-react';
 import { useToast } from './Toast';
 import type { Doctor } from '@/types';
@@ -25,7 +25,7 @@ export default function DoctorsManager() {
   const [form, setForm] = useState<DoctorForm>(EMPTY);
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/doctors?incluir_inactivos=true');
@@ -37,9 +37,9 @@ export default function DoctorsManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   function openCreate() {
     setEditing(null);

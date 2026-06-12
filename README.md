@@ -2,7 +2,7 @@
 
 CRM dental moderno con automatizaciones. Stack: **Next.js 16 (App Router) + Supabase (Postgres + Storage) + n8n (workflows)**.
 
-> **Estado actual:** producto funcional ~85%, salido de un ciclo intenso de saneamiento (ver `.agent/AGENTS.md` para historial de fases). Listo para uso interno; refactor a Server Components y suite de tests son los siguientes pasos.
+> **Estado actual (jun 2026):** producto en producción (https://crmbeta.orbitai.pro) con autodeploy GitHub→Dokploy. Fase 4 completada: odontograma, planes de tratamiento, PDF de facturas, import CSV, roles/permisos, audit log, CRUD de doctores y suite de tests (38 tests, incluye e2e del flujo principal). Único pendiente mayor: multi-clínica (ver §6).
 
 ---
 
@@ -98,6 +98,9 @@ Define `crm-app/.env.production` (y `.env.local` para desarrollo) con:
    psql "$DATABASE_URL" -f crm-app/supabase/migrations/003_unify_notes_prioridad.sql
    psql "$DATABASE_URL" -f crm-app/supabase/migrations/004_doctors_and_lab_works.sql
    psql "$DATABASE_URL" -f crm-app/supabase/migrations/005_patients_summary_view.sql
+   psql "$DATABASE_URL" -f crm-app/supabase/migrations/006_treatment_plans.sql
+   psql "$DATABASE_URL" -f crm-app/supabase/migrations/007_odontograma.sql
+   psql "$DATABASE_URL" -f crm-app/supabase/migrations/008_audit_log.sql
    ```
    (O pega su contenido en el SQL editor de Supabase, en orden).
 3. El bucket `archivos-crm` se autocrea en el primer upload — no requiere acción.
@@ -132,19 +135,23 @@ npm run dev                  # http://localhost:3000
 
 ---
 
-## 6. Lo que falta (Fase 4)
+## 6. Estado del blueprint (Fase 4)
 
-Documentado en el reporte de Fase 3 al final del trabajo. Resumen:
+Completado:
 
-- **Server Components** parciales: convertir páginas read-only (lista pacientes, billing, metrics) dejando interactividad en client subcomponents.
-- **Odontograma interactivo** (típico de CRM dental).
-- **Plan de tratamiento** como entidad agregadora de `treatments`.
-- **CRUD de doctores** desde UI (hoy se crean por SQL).
-- **PDF de facturas** local (hoy solo CSV).
-- **Importar pacientes desde CSV**.
-- **Permisos por rol** (recepción / doctor / admin).
-- **Audit log** y soporte multi-clínica.
-- **Tests**: integración end-to-end del flujo crear paciente → cita → abono → dashboard. Cero hoy.
+- ✅ **Server Components**: dashboard, pacientes, billing y métricas son RSC con interactividad en client subcomponents (`_components/`).
+- ✅ **Odontograma interactivo** (`Odontograma.tsx`, migración 007).
+- ✅ **Plan de tratamiento** como entidad agregadora de `treatments` (migración 006).
+- ✅ **CRUD de doctores** desde UI (Configuración → Doctores).
+- ✅ **PDF de facturas** local (`src/lib/invoice-pdf.ts`, jsPDF).
+- ✅ **Importar pacientes desde CSV** (`PatientsImport.tsx` + `/api/patients/import`).
+- ✅ **Permisos por rol** (`src/lib/permissions.ts`, `require-role.ts`).
+- ✅ **Audit log** (migración 008).
+- ✅ **Tests**: 38 tests con vitest (`crm-app/tests/`), incluye e2e del flujo paciente → tratamiento → cita → abono → dashboard (`tests/api/e2e-flow.test.ts`).
+
+Pendiente (requiere decisión de negocio):
+
+- ⏳ **Multi-clínica**: hoy el producto es single-tenant (una clínica por despliegue). Soportar varias clínicas implica re-modelar schema (clinic_id en todas las tablas), auth multiusuario real y aislamiento de datos.
 
 ---
 

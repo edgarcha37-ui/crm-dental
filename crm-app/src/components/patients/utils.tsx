@@ -1,4 +1,4 @@
-import { FileText, Image, File } from 'lucide-react';
+import { FileText, Image as ImageIcon, File } from 'lucide-react';
 import { ReactNode } from 'react';
 
 export function getInitials(n: string): string {
@@ -19,7 +19,7 @@ export function formatBytes(b: number): string {
 
 export function getFileIcon(tipo: string) {
     if (tipo?.includes('pdf')) return <FileText size={18} className="text-red-400" />;
-    if (tipo?.includes('image')) return <Image size={18} className="text-blue-400" />;
+    if (tipo?.includes('image')) return <ImageIcon size={18} className="text-blue-400" />;
     return <File size={18} className="text-gray-400" />;
 }
 

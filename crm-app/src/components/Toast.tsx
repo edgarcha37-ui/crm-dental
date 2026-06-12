@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
 export type ToastKind = 'success' | 'error' | 'info';
@@ -51,12 +51,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   }, [dismiss]);
 
-  const value: ToastContextValue = {
+  // Memoizado: sin esto, cada render del provider crea un objeto nuevo y
+  // dispara re-renders/efectos en todos los consumidores de useToast().
+  const value: ToastContextValue = useMemo(() => ({
     push,
     success: (m) => push('success', m),
     error: (m) => push('error', m),
     info: (m) => push('info', m),
-  };
+  }), [push]);
 
   return (
     <ToastContext.Provider value={value}>

@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../supabase';
+import { startOfThisMonth, toDateOnly, todayDateOnly } from '../dates';
 
 export interface Invoice {
     id: number;
@@ -63,7 +64,7 @@ export async function createInvoice(data: Partial<Invoice>) {
         direccion_fiscal: data.direccion_fiscal || null,
         uso_cfdi: data.uso_cfdi || null,
         monto: data.monto,
-        fecha: data.fecha || new Date().toISOString().split('T')[0],
+        fecha: data.fecha || todayDateOnly(),
         numero_factura: data.numero_factura || null,
         concepto: data.concepto || null,
         tipo: data.tipo || 'factura',
@@ -75,8 +76,7 @@ export async function createInvoice(data: Partial<Invoice>) {
 
 export async function getInvoiceStats() {
     const db = getSupabaseAdmin();
-    const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const firstOfMonth = toDateOnly(startOfThisMonth());
 
     const [incomeRes, pendingRes, countRes] = await Promise.all([
         db.from('invoices').select('monto').eq('estatus', 'Pagada').gte('fecha', firstOfMonth),

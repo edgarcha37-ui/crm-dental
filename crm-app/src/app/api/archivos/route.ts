@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
     const { paciente_id, nombre_archivo, tipo_archivo, peso_archivo, categoria } = parsed.data;
 
-    const presigned = await getPresignedUploadUrl(paciente_id, nombre_archivo, tipo_archivo || 'application/octet-stream');
+    const presigned = await getPresignedUploadUrl(paciente_id, nombre_archivo);
 
     const archivo = await createArchivoRecord({
       paciente_id,

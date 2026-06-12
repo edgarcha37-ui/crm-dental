@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../supabase';
+import { todayDateOnly } from '../dates';
 
 export type TreatmentPlanEstado = 'Planeado' | 'En Progreso' | 'Completado' | 'Cancelado' | 'Suspendido';
 
@@ -60,7 +61,7 @@ export async function createPlan(data: {
     nombre: data.nombre,
     descripcion: data.descripcion ?? null,
     estado: data.estado ?? 'En Progreso',
-    fecha_inicio: data.fecha_inicio ?? new Date().toISOString().split('T')[0],
+    fecha_inicio: data.fecha_inicio ?? todayDateOnly(),
     fecha_estimada_fin: data.fecha_estimada_fin ?? null,
   }).select('id').single();
   if (error) throw error;
