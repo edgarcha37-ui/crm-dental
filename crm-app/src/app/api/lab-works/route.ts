@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { getLabWorks, getActiveLabWorks, createLabWork } from '@/lib/data/lab-works';
 import { createLabWorkSchema, zodErrorResponse } from '@/schemas';
 import { LabWorkEstado } from '@/types';
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
     }
     const result = await createLabWork(parsed.data);
+    audit({ actor: getActorFromRequest(request), action: 'INSERT', entity: 'lab_works', entity_id: result.id, diff: { after: parsed.data }, route: 'POST /api/lab-works', ip: getIpFromRequest(request) });
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
     logApiError('POST /api/lab-works', e);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { updateTreatment } from '@/lib/data/treatments';
 import { updateTreatmentSchema, zodErrorResponse } from '@/schemas';
 
@@ -19,6 +20,7 @@ export async function PUT(
             return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
         }
         await updateTreatment(treatmentId, parsed.data);
+        audit({ actor: getActorFromRequest(request), action: 'UPDATE', entity: 'treatments', entity_id: treatmentId, diff: { after: parsed.data }, route: `PUT /api/treatments/${treatmentId}`, ip: getIpFromRequest(request) });
         return NextResponse.json({ success: true });
     } catch (err) {
         logApiError('PUT /api/treatments/[id]', err);

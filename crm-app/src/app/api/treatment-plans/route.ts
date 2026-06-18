@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { z } from 'zod';
 import { getPlansByPatient, createPlan } from '@/lib/data/treatment-plans';
 import { zodErrorResponse } from '@/schemas';
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
     }
     const result = await createPlan(parsed.data);
+    audit({ actor: getActorFromRequest(request), action: 'INSERT', entity: 'treatment_plans', entity_id: result.id, diff: { after: parsed.data }, route: 'POST /api/treatment-plans', ip: getIpFromRequest(request) });
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
     logApiError('POST /api/treatment-plans', e);

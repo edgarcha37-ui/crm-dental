@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { z } from 'zod';
 import { updatePlan, deletePlan } from '@/lib/data/treatment-plans';
 import { zodErrorResponse } from '@/schemas';
@@ -26,6 +27,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
     await updatePlan(pid, parsed.data);
+    audit({ actor: getActorFromRequest(request), action: 'UPDATE', entity: 'treatment_plans', entity_id: pid, diff: { after: parsed.data }, route: `PUT /api/treatment-plans/${pid}`, ip: getIpFromRequest(request) });
     return NextResponse.json({ ok: true });
   } catch (e) {
     logApiError('PUT /api/treatment-plans/[id]', e);
@@ -33,12 +35,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const pid = parseId(id);
     if (!pid) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     await deletePlan(pid);
+    audit({ actor: getActorFromRequest(request), action: 'DELETE', entity: 'treatment_plans', entity_id: pid, route: `DELETE /api/treatment-plans/${pid}`, ip: getIpFromRequest(request) });
     return NextResponse.json({ ok: true });
   } catch (e) {
     logApiError('DELETE /api/treatment-plans/[id]', e);

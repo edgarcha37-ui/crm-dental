@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import {
     Building2, User, Bell, Palette, Shield, Webhook,
-    Save, Check, ChevronRight, AlertCircle, Stethoscope,
+    Save, Check, ChevronRight, AlertCircle, Stethoscope, ClipboardList,
 } from 'lucide-react';
 import DoctorsManager from '@/components/DoctorsManager';
+import AuditLogViewer from '@/components/AuditLogViewer';
 
-type Section = 'clinica' | 'perfil' | 'doctores' | 'notificaciones' | 'apariencia' | 'seguridad' | 'integraciones';
+type Section = 'clinica' | 'perfil' | 'doctores' | 'notificaciones' | 'apariencia' | 'seguridad' | 'auditoria' | 'integraciones';
 
 const SECTIONS: { key: Section; label: string; icon: React.ReactNode; description: string }[] = [
     { key: 'clinica', label: 'Datos de la Clínica', icon: <Building2 size={18} />, description: 'Nombre, dirección, horarios' },
@@ -16,6 +17,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; descriptio
     { key: 'notificaciones', label: 'Notificaciones', icon: <Bell size={18} />, description: 'Recordatorios y alertas' },
     { key: 'apariencia', label: 'Apariencia', icon: <Palette size={18} />, description: 'Tema y preferencias visuales' },
     { key: 'seguridad', label: 'Seguridad', icon: <Shield size={18} />, description: 'Contraseña y accesos' },
+    { key: 'auditoria', label: 'Auditoría', icon: <ClipboardList size={18} />, description: 'Historial de cambios del sistema' },
     { key: 'integraciones', label: 'Integraciones n8n', icon: <Webhook size={18} />, description: 'Webhooks y automatizaciones' },
 ];
 
@@ -413,6 +415,9 @@ export default function SettingsPage() {
                             </div>
                         </div>
                     )}
+
+                    {/* AUDITORÍA */}
+                    {activeSection === 'auditoria' && <AuditLogViewer />}
 
                     {/* INTEGRACIONES n8n */}
                     {activeSection === 'integraciones' && (

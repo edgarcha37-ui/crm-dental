@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { getNotes, getNotesByPatient, createNote, updateNote, deleteNote, toggleNoteComplete } from '@/lib/data/notes';
 import { createNoteSchema, zodErrorResponse } from '@/schemas';
 import { z } from 'zod';
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
         }
         const result = await createNote(parsed.data);
+        audit({ actor: getActorFromRequest(request), action: 'INSERT', entity: 'notes', entity_id: result.id, diff: { after: parsed.data }, route: 'POST /api/notes', ip: getIpFromRequest(request) });
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
         logApiError('POST /api/notes', err);
@@ -44,8 +46,9 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json(zodErrorResponse(parsed.error), { status: 400 });
         }
         const { id, toggle, ...data } = parsed.data;
-        if (toggle) { await toggleNoteComplete(id); return NextResponse.json({ success: true }); }
+        if (toggle) { await toggleNoteComplete(id); audit({ actor: getActorFromRequest(request), action: 'UPDATE', entity: 'notes', entity_id: id, diff: { after: { toggle: true } }, route: 'PUT /api/notes', ip: getIpFromRequest(request) }); return NextResponse.json({ success: true }); }
         await updateNote(id, data);
+        audit({ actor: getActorFromRequest(request), action: 'UPDATE', entity: 'notes', entity_id: id, diff: { after: data }, route: 'PUT /api/notes', ip: getIpFromRequest(request) });
         return NextResponse.json({ success: true });
     } catch (err) {
         logApiError('PUT /api/notes', err);
@@ -59,6 +62,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
     try {
         await deleteNote(Number(id));
+        audit({ actor: getActorFromRequest(request), action: 'DELETE', entity: 'notes', entity_id: Number(id), route: 'DELETE /api/notes', ip: getIpFromRequest(request) });
         return NextResponse.json({ success: true });
     } catch (err) {
         logApiError('DELETE /api/notes', err);

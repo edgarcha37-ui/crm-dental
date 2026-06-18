@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logApiError } from '@/lib/logger';
+import { audit, getActorFromRequest, getIpFromRequest } from '@/lib/audit';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { createAbonoSchema, zodErrorResponse } from '@/schemas';
 import { todayDateOnly } from '@/lib/dates';
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Error al registrar la factura' }, { status: 500 });
         }
 
+        audit({ actor: getActorFromRequest(request), action: 'INSERT', entity: 'abonos', entity_id: invoice.id, diff: { after: { tratamiento_id, paciente_id, monto, concepto: conceptoTexto, nuevo_monto_pagado: nuevoMontoPagado, nuevo_estatus: nuevoEstatus } }, route: 'POST /api/abonos', ip: getIpFromRequest(request) });
         return NextResponse.json({
             success: true,
             invoice_id: invoice.id,
