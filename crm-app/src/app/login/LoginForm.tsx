@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
-    const router = useRouter();
     const search = useSearchParams();
     const next = search.get('next') || '/';
 
@@ -31,10 +30,9 @@ export default function LoginForm() {
                 setLoading(false);
                 return;
             }
-            // Sesión activa — refresh + redirect (router.refresh evita ver UI cacheada
-            // de un estado pre-login en navegaciones cliente).
-            router.replace(next);
-            router.refresh();
+            // Navegación completa: evita que el router cliente quede con estado
+            // stale tras expiración de sesión (causaba spinner infinito).
+            window.location.href = next;
         } catch {
             setError('Error de red. Intenta de nuevo.');
             setLoading(false);

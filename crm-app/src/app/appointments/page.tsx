@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar, Check, Clock, X, UserX, CheckCircle } from 'lucide-react';
 import AppointmentModal from '@/components/AppointmentModal';
+import { useToast } from '@/components/Toast';
 import { toDateOnly } from '@/lib/dates';
 
 interface Appointment {
@@ -14,6 +15,14 @@ interface Appointment {
     motivo: string;
     estado: string;
 }
+
+const ESTADO_OPTIONS = [
+    { value: 'Pendiente',  label: 'Pendiente',  icon: Clock,       color: 'text-yellow-600' },
+    { value: 'Confirmada', label: 'Confirmada',  icon: Check,       color: 'text-blue-600' },
+    { value: 'Completada', label: 'Completada',  icon: CheckCircle, color: 'text-green-600' },
+    { value: 'Cancelada',  label: 'Cancelada',   icon: X,           color: 'text-red-600' },
+    { value: 'No Asistió', label: 'No Asistió',  icon: UserX,       color: 'text-gray-600' },
+] as const;
 
 const VIEWS = ['Día', 'Semana', 'Mes'] as const;
 type ViewType = typeof VIEWS[number];
@@ -71,11 +80,46 @@ function getAppointmentPosition(apt: Appointment) {
 function dateStr(d: Date) { return toDateOnly(d); }
 
 export default function AppointmentsPage() {
+    const toast = useToast();
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [activeView, setActiveView] = useState<ViewType>('Semana');
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [selectedApt, setSelectedApt] = useState<Appointment | null>(null);
+    const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
+    function openStatusPopover(apt: Appointment, e: React.MouseEvent) {
+        e.stopPropagation();
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const popoverHeight = 230;
+        const fitsBelow = rect.bottom + popoverHeight + 8 < window.innerHeight;
+        setSelectedApt(apt);
+        setPopoverPos({
+            top: fitsBelow ? rect.bottom + 4 : rect.top - popoverHeight - 4,
+            left: Math.min(rect.left, window.innerWidth - 220),
+        });
+    }
+
+    function closePopover() { setSelectedApt(null); setPopoverPos(null); }
+
+    async function changeEstado(apt: Appointment, nuevoEstado: string) {
+        closePopover();
+        try {
+            const res = await fetch(`/api/appointments/${apt.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: nuevoEstado }),
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || `Error ${res.status}`);
+            }
+            setAppointments(prev => prev.map(a => a.id === apt.id ? { ...a, estado: nuevoEstado } : a));
+            toast.success(`Cita de ${apt.paciente_nombre} → ${nuevoEstado}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al cambiar estado');
+        }
+    }
 
     async function fetchAppointments() {
         try {
@@ -133,7 +177,7 @@ export default function AppointmentsPage() {
                         {dayApts.map(apt => {
                             const pos = getAppointmentPosition(apt);
                             return (
-                                <div key={apt.id} className={`absolute left-2 right-2 rounded-lg px-2 py-1 overflow-hidden cursor-pointer hover:opacity-90 transition-all border-l-4 ${STATUS_COLORS[apt.estado]||'bg-gray-100 border-gray-300 text-gray-700'}`} style={{top:pos.top,height:pos.height,borderLeftWidth:'4px'}}>
+                                <div key={apt.id} onClick={(e) => openStatusPopover(apt, e)} className={`absolute left-2 right-2 rounded-lg px-2 py-1 overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-md transition-all border-l-4 ${STATUS_COLORS[apt.estado]||'bg-gray-100 border-gray-300 text-gray-700'}`} style={{top:pos.top,height:pos.height,borderLeftWidth:'4px'}}>
                                     <p className="text-xs font-bold truncate">{apt.paciente_nombre}</p>
                                     <p className="text-[10px] opacity-70">{apt.hora_inicio} - {apt.hora_fin} · {apt.motivo}</p>
                                 </div>
@@ -175,7 +219,7 @@ export default function AppointmentsPage() {
                                 {dayApts.map(apt => {
                                     const pos = getAppointmentPosition(apt);
                                     return (
-                                        <div key={apt.id} className={`absolute left-1 right-1 rounded-lg px-2 py-1 overflow-hidden cursor-pointer hover:opacity-90 transition-all ${STATUS_COLORS[apt.estado]||'bg-gray-100 border-gray-300 text-gray-700'}`} style={{top:pos.top,height:pos.height,borderLeftWidth:'3px'}}>
+                                        <div key={apt.id} onClick={(e) => openStatusPopover(apt, e)} className={`absolute left-1 right-1 rounded-lg px-2 py-1 overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-md transition-all ${STATUS_COLORS[apt.estado]||'bg-gray-100 border-gray-300 text-gray-700'}`} style={{top:pos.top,height:pos.height,borderLeftWidth:'3px'}}>
                                             <p className="text-[10px] font-bold truncate">{apt.paciente_nombre}</p>
                                             <p className="text-[9px] opacity-70 truncate">{apt.hora_inicio} - {apt.hora_fin}</p>
                                         </div>
@@ -212,7 +256,7 @@ export default function AppointmentsPage() {
                                 </p>
                                 <div className="space-y-0.5">
                                     {dayApts.slice(0, 3).map(apt => (
-                                        <div key={apt.id} className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate cursor-pointer ${STATUS_COLORS[apt.estado]||'bg-gray-100 text-gray-700'}`}>
+                                        <div key={apt.id} onClick={(e) => openStatusPopover(apt, e)} className={`text-[9px] font-medium px-1.5 py-0.5 rounded truncate cursor-pointer hover:shadow-md transition-all ${STATUS_COLORS[apt.estado]||'bg-gray-100 text-gray-700'}`}>
                                             {apt.hora_inicio} {apt.paciente_nombre}
                                         </div>
                                     ))}
@@ -296,6 +340,36 @@ export default function AppointmentsPage() {
                 onClose={() => setShowModal(false)}
                 onCreated={() => fetchAppointments()}
             />
+
+            {/* Popover para cambiar estado */}
+            {selectedApt && popoverPos && (
+                <>
+                <div className="fixed inset-0 z-40" onClick={closePopover} />
+                <div
+                    className="fixed z-50 bg-white rounded-xl shadow-lg border border-[var(--color-border-light)] py-1 w-52"
+                    style={{ top: popoverPos.top, left: popoverPos.left }}
+                >
+                    <div className="px-3 py-2 border-b border-[var(--color-border-light)]">
+                        <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">{selectedApt.paciente_nombre}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">{selectedApt.hora_inicio} – {selectedApt.hora_fin} · {selectedApt.motivo}</p>
+                    </div>
+                    <div className="py-1">
+                        {ESTADO_OPTIONS.map(({ value, label, icon: Icon, color }) => (
+                            <button
+                                key={value}
+                                onClick={() => changeEstado(selectedApt, value)}
+                                disabled={selectedApt.estado === value}
+                                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-default ${color}`}
+                            >
+                                <Icon size={14} />
+                                <span className="font-medium">{label}</span>
+                                {selectedApt.estado === value && <span className="ml-auto text-[10px] text-[var(--color-text-muted)]">actual</span>}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                </>
+            )}
         </div>
     );
 }
